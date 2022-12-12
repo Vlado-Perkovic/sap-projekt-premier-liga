@@ -52,14 +52,31 @@ krenuti sa našim zadacima.
 **izbrisati kasnije** *napomena ostatku ekipe: spremio sam podatke kao
 dataset.csv jer je ime dugo i ne ocitava š pa je ovo najjednostavnije*
 
+**\-\--rijesiti problem utf-8 encodinga da se imena ispravno prikazuju +
+č, ć umjesto upitnika----**
+
 ```{r}
 nogometasi <- read.csv('dataset.csv')
-#head(nogometasi)
-nogometasi
-#str(nogometasi)
+head(nogometasi)
+#nogometasi[1:5,1] # \xd8 je O sa crtom unutra
+str(nogometasi)
 ```
 
-### **3. *XY*-test**
+### **3. Generalne informacije o podatcima**
+
+Ekipe koje su se natjecale u Premier Ligi u sezonu 2021/2022
+
+```{r}
+nogometasi$Team %>% unique()
+```
+
+Najbolji strijelci i asistenti
+
+```{r}
+#mucimse
+```
+
+### **. *XY*-test**
 
 Prvi od testova koje ćemo koristiti je xy-test. Njega smo odlučili
 koristiti jer **insert_razlog**. Tim testom želimo odgovoriti na pitanja
@@ -80,7 +97,7 @@ potrebne korake. ...
 
 ...
 
-### **4. *YZ*-test**
+### **. *YZ*-test**
 
 Nakon prvog testa, sljedeći po redu je yz-test. Pitanja na koja nam on
 može dati odgovor su recimo:
@@ -99,7 +116,7 @@ On nam je ovdje koristan jer **dopuniti**... ...
 
 ...
 
-### **5. *ZX*-test**
+### **. *ZX*-test**
 
 Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
 morali baviti i secirati što čini dobro igrača ovisno o pozicijama.
@@ -120,7 +137,7 @@ Došli smo do sljedećih zaključaka:
 
 ...
 
-### **6. *XZ*-test**
+### **. *XZ*-test**
 
 Svi koji prate nogomet malo detaljnije znaju čiji igrači se cijene.
 Brazilci su najbolji dribleri, Španjolci najbolji u tiki-taki, Hrvati
@@ -139,7 +156,7 @@ još jedna preuveličana engleska nogometna bajka. ...
 
 ...
 
-### **7. Rezultati**
+### **. Rezultati**
 
 ...
 
