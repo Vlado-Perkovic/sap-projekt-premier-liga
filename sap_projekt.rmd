@@ -1,0 +1,146 @@
+---
+title: "Statistička analiza podataka - projekt"
+author: "Sapunanje"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(base)
+library(dbplyr)
+library(data.table)
+library(datasets)
+library(magrittr)
+library(tidyr)
+```
+
+## **Statistika nogometaša engleske Premier lige**
+
+#### Studenti: Karlo Boroš, Petar Novak, Vlado Perković i Mislav Rendulić
+
+### **1. Uvod**
+
+Ovaj projekt iz kolegija Statistička analiza podataka radili smo pod
+vodstvom asistenta *insert_name*. Ovaj seminar ćemo podijeliti u par
+dijelova:
+
+1.  Uvod
+2.  Osnovna prilagodba podataka
+3.  *XY*-test
+4.  *YZ*-test
+5.  *ZX*-test
+6.  *XZ*-test
+7.  Rezultati
+
+Imali smo sreće i dobili smo upravo zadatak koji smo i priželjkivali.
+
+**Cilj** ovoga projekta je uzeti dane podatke i iz njih probati izvući
+zaključke i faktore koji mogu utjecati na rezultat, broj golova i sl.
+Naravno, nije potrebno naglasiti važnost korištenja ispravnih testova te
+dobivanje rezultata koji su validni.
+
+### **2. Osnovna prilagodba podataka**
+
+Podatke je prvo potrebno učitati. Bitno je dobro ih proučiti kako ne
+bismo slučajno pogriješili u nekom zaključku. Nakon dobre analize možemo
+krenuti sa našim zadacima.
+
+**izbrisati kasnije** *napomena ostatku ekipe: spremio sam podatke kao
+dataset.csv jer je ime dugo i ne ocitava š pa je ovo najjednostavnije*
+
+```{r}
+nogometasi <- read.csv('dataset.csv')
+#head(nogometasi)
+nogometasi
+#str(nogometasi)
+```
+
+### **3. *XY*-test**
+
+Prvi od testova koje ćemo koristiti je xy-test. Njega smo odlučili
+koristiti jer **insert_razlog**. Tim testom želimo odgovoriti na pitanja
+kao što su:
+
+-   Postoji li razlika u broju odigranih minuta mladih igraˇca (do 25
+    godina) medu premierligaškim ekipama?
+-   **sl pitanje**
+
+Test ćemo izvesti za **1. i 2. pitanje (dogovorimo)** te ćemo pojasniti
+potrebne korake. ...
+
+```{r}
+
+```
+
+#### **Zaključci:**
+
+...
+
+### **4. *YZ*-test**
+
+Nakon prvog testa, sljedeći po redu je yz-test. Pitanja na koja nam on
+može dati odgovor su recimo:
+
+-   Dobivaju li u prosjeku viˇse ˇzutih kartona napadaˇci ili igraˇci
+    veznog reda?
+-   **sl pitanje**
+
+On nam je ovdje koristan jer **dopuniti**... ...
+
+```{r}
+
+```
+
+#### **Zaključci:**
+
+...
+
+### **5. *ZX*-test**
+
+Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
+morali baviti i secirati što čini dobro igrača ovisno o pozicijama.
+Došli smo do sljedećih zaključaka:
+
+-   **nesto nesto**
+-   **nesto nesto**
+-   **nesto nesto**
+-   **nesto nesto**
+
+**blablabla** ...
+
+```{r}
+
+```
+
+#### **Zaključci:**
+
+...
+
+### **6. *XZ*-test**
+
+Svi koji prate nogomet malo detaljnije znaju čiji igrači se cijene.
+Brazilci su najbolji dribleri, Španjolci najbolji u tiki-taki, Hrvati
+najbolji u penalima, ali u Engleskoj su najbolji Englezi. Javnost to
+zove *"English tax"* i time se cilja na činjenicu kako engleski klubovi
+skuplje plaćaju i prodaju domaće igrače u odnosu na strane. Je li to
+opravdano, pokazat će nam naš xz-test. Koristit ćemo ga jer **razlog** i
+napokon ćemo saznati doprinose li oni sveukupnom uspjehu tima ili je to
+još jedna preuveličana engleska nogometna bajka. ...
+
+```{r}
+
+```
+
+#### **Zaključci:**
+
+...
+
+### **7. Rezultati**
+
+...
+
+...
