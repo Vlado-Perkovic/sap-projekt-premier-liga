@@ -61,7 +61,7 @@ dataset.csv jer je ime dugo i ne ocitava š pa je ovo najjednostavnije*
 č, ć umjesto upitnika----**
 
 ```{r}
-nogometasi <- read.csv('dataset.csv')
+nogometasi <- read_csv('dataset.csv')
 nogometasi$Nation <- str_sub(nogometasi$Nation, -3)
 head(nogometasi)
 str(nogometasi)
@@ -77,7 +77,7 @@ najbolji_asistenti <- slice_max(nogometasi, Ast, n=5) %>% select(Player, Team, G
 
 Ekipe koje su se natjecale u Premier Ligi u sezonu 2021/2022
 
-```{r include=FALSE}
+```{r}
 klubovi
 ```
 
