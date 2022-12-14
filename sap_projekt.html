@@ -395,6 +395,8 @@ spremio sam podatke kao dataset.csv jer je ime dugo i ne ocitava š pa je
 ovo najjednostavnije</em></p>
 <p><strong>---rijesiti problem utf-8 encodinga da se imena ispravno
 prikazuju + č, ć umjesto upitnika—-</strong></p>
+<p>#poslije dodati include = FALSE,za sad nek ostane da vidimo sve sta
+treba</p>
 <pre class="r"><code>nogometasi &lt;- read.csv(&#39;dataset.csv&#39;)
 nogometasi$Nation &lt;- str_sub(nogometasi$Nation, -3)
 head(nogometasi)</code></pre>
@@ -455,6 +457,30 @@ head(nogometasi)</code></pre>
 <div id="generalne-informacije-o-podatcima" class="section level3">
 <h3><strong>3. Generalne informacije o podatcima</strong></h3>
 <p>Ekipe koje su se natjecale u Premier Ligi u sezonu 2021/2022</p>
+<pre class="r"><code>as_tibble(klubovi)</code></pre>
+<pre><code>## # A tibble: 20 × 1
+##    value                  
+##    &lt;chr&gt;                  
+##  1 Arsenal                
+##  2 Aston Villa            
+##  3 Brentford              
+##  4 Brighton &amp; Hove Albion 
+##  5 Burnley                
+##  6 Chelsea                
+##  7 Crystal Palace         
+##  8 Everton                
+##  9 Leeds United           
+## 10 Leicester City         
+## 11 Liverpool              
+## 12 Manchester City        
+## 13 Manchester United      
+## 14 Newcastle United       
+## 15 Norwich City           
+## 16 Southampton            
+## 17 Tottenham Hotspur      
+## 18 Watford                
+## 19 West Ham United        
+## 20 Wolverhampton Wanderers</code></pre>
 <pre class="r"><code>klubovi</code></pre>
 <pre><code>##  [1] &quot;Arsenal&quot;                 &quot;Aston Villa&quot;            
 ##  [3] &quot;Brentford&quot;               &quot;Brighton &amp; Hove Albion&quot; 
@@ -466,6 +492,8 @@ head(nogometasi)</code></pre>
 ## [15] &quot;Norwich City&quot;            &quot;Southampton&quot;            
 ## [17] &quot;Tottenham Hotspur&quot;       &quot;Watford&quot;                
 ## [19] &quot;West Ham United&quot;         &quot;Wolverhampton Wanderers&quot;</code></pre>
+<pre class="r"><code>cat(&#39;Preko rownames mozda nastimati da ne pise &quot;value&quot; + odluciti jel bi ispisali preko tibble-a ili obicno&#39;)</code></pre>
+<pre><code>## Preko rownames mozda nastimati da ne pise &quot;value&quot; + odluciti jel bi ispisali preko tibble-a ili obicno</code></pre>
 <p>Najbolji strijelci i asistenti</p>
 <pre class="r"><code>najbolji_strijelci</code></pre>
 <pre><code>##              Player              Team Gls Gls.1 Ast
