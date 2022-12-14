@@ -69,16 +69,23 @@ str(nogometasi)
 
 ### **3. Generalne informacije o podatcima**
 
+```{r include=FALSE}
+klubovi <- nogometasi$Team %>% unique()
+najbolji_strijelci <- slice_max(nogometasi, Gls, n=5) %>% select(Player, Team, Gls, Gls.1, Ast)
+najbolji_asistenti <- slice_max(nogometasi, Ast, n=5) %>% select(Player, Team, Gls, Ast, Ast.1)
+```
+
 Ekipe koje su se natjecale u Premier Ligi u sezonu 2021/2022
 
-```{r}
-nogometasi$Team %>% unique()
+```{r include=FALSE}
+klubovi
 ```
 
 Najbolji strijelci i asistenti
 
 ```{r}
-#mucimse
+najbolji_strijelci
+najbolji_asistenti
 ```
 
 ### **4. *XY*-test**
