@@ -62,8 +62,8 @@ dataset.csv jer je ime dugo i ne ocitava š pa je ovo najjednostavnije*
 
 ```{r}
 nogometasi <- read.csv('dataset.csv')
+nogometasi$Nation <- str_sub(nogometasi$Nation, -3)
 head(nogometasi)
-#nogometasi[1:5,1] # \xd8 je O sa crtom unutra
 str(nogometasi)
 ```
 
