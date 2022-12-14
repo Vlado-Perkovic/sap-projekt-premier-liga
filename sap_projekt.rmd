@@ -16,6 +16,10 @@ library(data.table)
 library(datasets)
 library(magrittr)
 library(tidyr)
+library(dplyr)
+library(readr)
+library(stringr)
+library(lubridate)
 ```
 
 ## **Statistika nogometaša engleske Premier lige**
@@ -30,11 +34,12 @@ dijelova:
 
 1.  Uvod
 2.  Osnovna prilagodba podataka
-3.  *XY*-test
-4.  *YZ*-test
-5.  *ZX*-test
-6.  *XZ*-test
-7.  Rezultati
+3.  Generalne informacije o podacima
+4.  *XY*-test
+5.  *YZ*-test
+6.  *ZX*-test
+7.  *XZ*-test
+8.  Rezultati
 
 Imali smo sreće i dobili smo upravo zadatak koji smo i priželjkivali.
 
@@ -76,7 +81,7 @@ Najbolji strijelci i asistenti
 #mucimse
 ```
 
-### **. *XY*-test**
+### **4. *XY*-test**
 
 Prvi od testova koje ćemo koristiti je xy-test. Njega smo odlučili
 koristiti jer **insert_razlog**. Tim testom želimo odgovoriti na pitanja
@@ -97,7 +102,7 @@ potrebne korake. ...
 
 ...
 
-### **. *YZ*-test**
+### **5. *YZ*-test**
 
 Nakon prvog testa, sljedeći po redu je yz-test. Pitanja na koja nam on
 može dati odgovor su recimo:
@@ -116,7 +121,7 @@ On nam je ovdje koristan jer **dopuniti**... ...
 
 ...
 
-### **. *ZX*-test**
+### **6. *ZX*-test**
 
 Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
 morali baviti i secirati što čini dobro igrača ovisno o pozicijama.
@@ -137,7 +142,7 @@ Došli smo do sljedećih zaključaka:
 
 ...
 
-### **. *XZ*-test**
+### **7. *XZ*-test**
 
 Svi koji prate nogomet malo detaljnije znaju čiji igrači se cijene.
 Brazilci su najbolji dribleri, Španjolci najbolji u tiki-taki, Hrvati
@@ -156,7 +161,7 @@ još jedna preuveličana engleska nogometna bajka. ...
 
 ...
 
-### **. Rezultati**
+### **8. Rezultati**
 
 ...
 
