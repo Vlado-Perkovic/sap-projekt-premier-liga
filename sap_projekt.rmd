@@ -57,23 +57,52 @@ krenuti sa našim zadacima.
 **izbrisati kasnije** *napomena ostatku ekipe: spremio sam podatke kao
 dataset.csv jer je ime dugo i ne ocitava š pa je ovo najjednostavnije*
 
-**\-\--rijesiti problem utf-8 encodinga da se imena ispravno prikazuju +
-č, ć umjesto upitnika----**
+#poslije dodati include = FALSE, za sad nek ostane da vidimo sve sta
+treba
 
-#poslije dodati include = FALSE,za sad nek ostane da vidimo sve sta treba
 ```{r }
-nogometasi <- read.csv('dataset.csv')
+nogometasi <- read.csv('dataset.csv', encoding = "UTF-8")
 nogometasi$Nation <- str_sub(nogometasi$Nation, -3)
 head(nogometasi)
 str(nogometasi)
 ```
 
-### **3. Generalne informacije o podatcima**
+Nakon enkodiranja početnih podataka, postajala su odstupanja od stvarnih
+imena kod nekih igrača pa smo ta imena ručno ispravili.
+
+```{r}
+#utf-8 encoding
+#imena <- c("Halil Dervişoğlu", "Michał Karbownik", "Matěj Vydra", "Mateo Kovačić",  "Luka Milivojević", "Asmir Begović", "Çağlar Söyüncü", "Eldin Jakupović", "İlkay Gündoğan", "Nemanja Matić", "Przemysław Płacheta", "Łukasz Fabiański", "Tomáš Souček", "Nikola Vlašić")
+
+
+
+#ako nema elegantnijeg nacina nek ovo ostane
+
+nogometasi$Player[nogometasi$Player == "Halil Dervi?o?lu"] <- "Halil Dervişoğlu"
+nogometasi$Player[nogometasi$Player == "?lkay Gündo?an"] <- "İlkay Gündoğan"
+nogometasi$Player[nogometasi$Player == "?ukasz Fabia?ski"] <- "Łukasz Fabiański"
+nogometasi$Player[nogometasi$Player == "Asmir Begovi?"] <- "Asmir Begović"
+nogometasi$Player[nogometasi$Player == "Ça?lar Söyüncü"] <- "Çağlar Söyüncü"
+nogometasi$Player[nogometasi$Player == "Eldin Jakupovi?"] <- "Eldin Jakupović"
+nogometasi$Player[nogometasi$Player == "Luka Milivojevi?"] <- "Luka Milivojević"
+nogometasi$Player[nogometasi$Player == "Mat?j Vydra"] <- "Matěj Vydra"
+nogometasi$Player[nogometasi$Player == "Mateo Kova?i?"] <- "Mateo Kovačić"
+nogometasi$Player[nogometasi$Player == "Micha? Karbownik"] <- "Michał Karbownik"
+nogometasi$Player[nogometasi$Player == "Nemanja Mati?"] <- "Nemanja Matić"
+nogometasi$Player[nogometasi$Player == "Nikola Vla\u009ai?"] <- "Nikola Vlašić"
+nogometasi$Player[nogometasi$Player == "Przemys?aw P?acheta"] <- "Przemysław Płacheta"
+nogometasi$Player[nogometasi$Player == "Tomá\u009a Sou?ek"] <- "Tomáš Souček"
+
+
+
+```
+
+### **3. Pregled sezone**
 
 ```{r include=FALSE}
 klubovi <- nogometasi$Team %>% unique()
-najbolji_strijelci <- slice_max(nogometasi, Gls, n=5) %>% select(Player, Team, Gls, Gls.1, Ast)
-najbolji_asistenti <- slice_max(nogometasi, Ast, n=5) %>% select(Player, Team, Gls, Ast, Ast.1)
+najbolji_strijelci <- slice_max(nogometasi, Gls, n=5) %>% select(Player, Team, Gls, Gls.1) %>% rename("Gls per 90 min" = "Gls.1")
+najbolji_asistenti <- slice_max(nogometasi, Ast, n=5) %>% select(Player, Team, Ast, Ast.1) %>% rename("Ast per 90 min" = "Ast.1")
 ```
 
 Ekipe koje su se natjecale u Premier Ligi u sezonu 2021/2022
@@ -84,10 +113,15 @@ klubovi
 cat('Preko rownames mozda nastimati da ne pise "value" + odluciti jel bi ispisali preko tibble-a ili obicno')
 ```
 
-Najbolji strijelci i asistenti
+#### Najbolji strijelci
 
 ```{r}
 najbolji_strijelci
+```
+
+#### Najbolji asistenti
+
+```{r}
 najbolji_asistenti
 ```
 
