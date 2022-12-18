@@ -72,7 +72,7 @@ str(nogometasi)
 Nakon enkodiranja početnih podataka, postajala su odstupanja od stvarnih
 imena kod nekih igrača pa smo ta imena ručno ispravili.
 
-```{r}
+```{r include=FALSE}
 #utf-8 encoding
 #imena <- c("Halil Dervişoğlu", "Michał Karbownik", "Matěj Vydra", "Mateo Kovačić",  "Luka Milivojević", "Asmir Begović", "Çağlar Söyüncü", "Eldin Jakupović", "İlkay Gündoğan", "Nemanja Matić", "Przemysław Płacheta", "Łukasz Fabiański", "Tomáš Souček", "Nikola Vlašić")
 
@@ -110,9 +110,9 @@ najbolji_asistenti <- slice_max(nogometasi, Ast, n=5) %>% select(Player, Team, A
 Ekipe koje su se natjecale u Premier Ligi u sezonu 2021/2022
 
 ```{r}
-as_tibble(klubovi)
+#as_tibble(klubovi)
 klubovi
-cat('Preko rownames mozda nastimati da ne pise "value" + odluciti jel bi ispisali preko tibble-a ili obicno')
+#cat('Preko rownames mozda nastimati da ne pise "value" + odluciti jel bi ispisali preko tibble-a ili obicno')
 ```
 
 #### Najbolji strijelci
@@ -150,7 +150,33 @@ nrow(obrambeniNapadaci)
 nrow(golmani)
 ```
 
+Vizualizacija razdiobe igrača po pozicijama:
+
+```{r}
+nogometasi %>% select(Pos) %>% summarise(uniPos = ifelse(Pos == "DF,FW", "FW,DF", ifelse(Pos == "MF,FW", "FW,MF", ifelse(Pos == "DF,MF", "MF,DF", Pos)))) %>% arrange(uniPos) -> popravak
+barplot(table(popravak), xlab = "Pozicije", ylab = "frekvencija")
+```
+
+Primijetimo veliki broj obrambenih igrača što i ima smisla kada
+pogledamo da ekipe najčešće igraju s 4 igrača u obrani. Neki igrači su
+igrali pozicije beka i napadačkog krila pa spadaju u skupinu "FW,DF"
+koja je na prvi pogled dosta neuobičajena.
+
 #### Godine igrača
+
+```{r}
+distrStarosti <- hist(nogometasi$Age,
+                      breaks = 20,
+                      main="Razdioba starosti igrača",
+                      xlab="Starost",
+                      ylab='Frekvencija'
+                      )
+```
+
+### **4.** 
+
+-   Postoji li razlika u broju odigranih minuta mladih igrača (do 25
+    godina) među premierligaškim ekipama?
 
 ```{r}
 mladi <- nogometasi %>% filter(Age < 25)
@@ -159,18 +185,18 @@ stari <- nogometasi %>% filter(Age >= 25)
 nrow(stari)
 ```
 
-### **4. *XY*-test**
+```{r}
 
-Prvi od testova koje ćemo koristiti je xy-test. Njega smo odlučili
-koristiti jer **insert_razlog**. Tim testom želimo odgovoriti na pitanja
-kao što su:
+```
 
--   Postoji li razlika u broju odigranih minuta mladih igraˇca (do 25
-    godina) medu premierligaškim ekipama?
--   **sl pitanje**
+#### **Zaključci:**
 
-Test ćemo izvesti za **1. i 2. pitanje (dogovorimo)** te ćemo pojasniti
-potrebne korake. ...
+...
+
+### **5.**
+
+-   Dobivaju li u prosjeku više žutih kartona napadači ili igrači veznog
+    reda?
 
 ```{r}
 
@@ -180,26 +206,7 @@ potrebne korake. ...
 
 ...
 
-### **5. *YZ*-test**
-
-Nakon prvog testa, sljedeći po redu je yz-test. Pitanja na koja nam on
-može dati odgovor su recimo:
-
--   Dobivaju li u prosjeku viˇse ˇzutih kartona napadaˇci ili igraˇci
-    veznog reda?
--   **sl pitanje**
-
-On nam je ovdje koristan jer **dopuniti**... ...
-
-```{r}
-
-```
-
-#### **Zaključci:**
-
-...
-
-### **6. *ZX*-test**
+### **6.** 
 
 Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
 morali baviti i secirati što čini dobrog igrača ovisno o pozicijama.
