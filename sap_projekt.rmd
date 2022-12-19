@@ -156,6 +156,7 @@ Vizualizacija razdiobe igrača po pozicijama:
 
 ```{r}
 nogometasi %>% select(Pos) %>% summarise(uniPos = ifelse(Pos == "DF,FW", "FW,DF", ifelse(Pos == "MF,FW", "FW,MF", ifelse(Pos == "DF,MF", "MF,DF", Pos)))) %>% arrange(uniPos) -> popravak
+#c("GK","DF", "MF,DF", "MF", "FW,MF", "FW,DF", "FW")
 barplot(table(popravak), xlab = "Pozicije", ylab = "frekvencija")
 ```
 
@@ -183,8 +184,8 @@ Podijelimo igrače...
 
 ```{r}
 mladi <- nogometasi %>% filter(Age <= 25)
-stari <- nogometasi %>% filter(Age > 25)
 cat("Broj mladih igrača do 25 godina iznosi: ", nrow(mladi), "\n")
+stari <- nogometasi %>% filter(Age > 25)
 cat("Broj igrača iznad 25 godina iznosi: ", nrow(stari))
 ```
 
@@ -192,9 +193,11 @@ Vizualizirajmo podjelu igrača u samim klubovima:
 
 ```{r}
 nogometasi_god <- nogometasi %>% summarise(mladi = ifelse(Age <= 25, 1, 0), Team) %>% group_by(Team) %>% summarise(mladi = sum(mladi, na.rm = T), stari = n() - mladi) %>% pivot_longer(cols = mladi:stari, names_to = "kategorija")
+
 ggplot(nogometasi_god, aes(x=Team, y=value, fill=kategorija)) +
     geom_bar(stat="identity", position="dodge") +
-    theme(axis.text.x = element_text(angle = 90))
+    theme(axis.text.x = element_text(angle = 90)) 
+  #scale_fill_brewer(palette = "Set1")
 ```
 
 Vidimo da klubovi pretežno nastoje priključivati mlađe igrače u ekipu uz
@@ -221,12 +224,12 @@ mogli pretpostaviti **nezavisnost**.
 
 Moramo pripaziti i na činjenicu da postoji podosta igrača s vrlo malo
 minuta odigrano, stoga ima smisla gledati igrače koji su u cijeloj
-sezoni sveukupno barem 90 minuta odigrali.
+sezoni sveukupno barem 10% minuta odigrali.
 
 ```{r}
 #pitanje: ima li smisla ukljucivat MF,DF pod veznjake kao i FW,DF pod napadače
-veznjaci <- nogometasi %>% filter(Pos == "MF" & !is.na(X90s) & X90s >= 5)
-napadaci <- nogometasi %>% filter(Pos == "FW" & !is.na(X90s) & X90s >= 5)
+veznjaci <- nogometasi %>% filter(Pos == "MF" & !is.na(X90s) & X90s >= 4)
+napadaci <- nogometasi %>% filter(Pos == "FW" & !is.na(X90s) & X90s >= 4)
 cat("Prosječan broj žutih kartona igrača veznog reda iznosi: ", mean(veznjaci$CrdY, na.rm = T), "\n")
 cat("Prosječan broj žutih kartona napadača iznosi: ", mean(napadaci$CrdY, na.rm = T))
 
@@ -314,7 +317,6 @@ napadača.
 morali baviti i secirati što čini dobrog igrača ovisno o pozicijama.
 Došli smo do sljedećih zaključaka:
 
--   **nesto nesto**
 -   **nesto nesto**
 -   **nesto nesto**
 -   **nesto nesto**
