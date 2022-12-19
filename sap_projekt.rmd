@@ -22,6 +22,7 @@ library(dplyr)
 library(readr)
 library(stringr)
 library(lubridate)
+library(ggplot2)
 ```
 
 ## **Statistika nogometaša engleske Premier lige**
@@ -132,7 +133,8 @@ najbolji_asistenti
 **izbrisati** Po ovome vidimo da nemamo klasicne pozicije nego imamo
 vezni, napadaci, napadaci-vezni, vezni-obrambeni i slicne kombinacije
 
-```{r}
+```{r include=FALSE}
+table(nogometasi$Pos)
 table(factor(nogometasi$Pos)) %>% sort()
 samoVezni <- nogometasi %>% filter(Pos == "MF")
 samoNapadaci <- nogometasi %>% filter(Pos == "FW")
@@ -173,17 +175,32 @@ distrStarosti <- hist(nogometasi$Age,
                       )
 ```
 
-### **4.** 
+### **4.**
 
--   Postoji li razlika u broju odigranih minuta mladih igrača (do 25
-    godina) među premierligaškim ekipama?
+#### **Postoji li razlika u broju odigranih minuta mladih igrača (do 25 godina) među premierligaškim ekipama?**
+
+Podijelimo igrače...
 
 ```{r}
-mladi <- nogometasi %>% filter(Age < 25)
-nrow(mladi)
-stari <- nogometasi %>% filter(Age >= 25)
-nrow(stari)
+mladi <- nogometasi %>% filter(Age <= 25)
+stari <- nogometasi %>% filter(Age > 25)
+cat("Broj mladih igrača do 25 godina iznosi: ", nrow(mladi), "\n")
+cat("Broj igrača iznad 25 godina iznosi: ", nrow(stari))
 ```
+
+Vizualizirajmo podjelu igrača u samim klubovima:
+
+```{r}
+nogometasi_god <- nogometasi %>% summarise(mladi = ifelse(Age <= 25, 1, 0), Team) %>% group_by(Team) %>% summarise(mladi = sum(mladi, na.rm = T), stari = n() - mladi) %>% pivot_longer(cols = mladi:stari, names_to = "kategorija")
+ggplot(nogometasi_god, aes(x=Team, y=value, fill=kategorija)) +
+    geom_bar(stat="identity", position="dodge") +
+    theme(axis.text.x = element_text(angle = 90))
+```
+
+Vidimo da klubovi pretežno nastoje priključivati mlađe igrače u ekipu uz
+iznimke timova Burnley i Newcastle United.
+
+Pogledajmo sada koliko te iste mlade igrače timovi zapravo i koriste...
 
 ```{r}
 
@@ -195,18 +212,103 @@ nrow(stari)
 
 ### **5.**
 
--   Dobivaju li u prosjeku više žutih kartona napadači ili igrači veznog
-    reda?
+#### **Dobivaju li u prosjeku više žutih kartona napadači ili igrači veznog reda?**
+
+Uzmimo za početak prosječne vrijednosti dobijenih žutih kartona kao
+motivaciju za statističko ispitivanje. Budući da se neki igrači smatraju
+i veznjacima i napadačima, njih nećemo ubrajati u ispitivanje kako bi
+mogli pretpostaviti **nezavisnost**.
+
+Moramo pripaziti i na činjenicu da postoji podosta igrača s vrlo malo
+minuta odigrano, stoga ima smisla gledati igrače koji su u cijeloj
+sezoni sveukupno barem 90 minuta odigrali.
 
 ```{r}
+#pitanje: ima li smisla ukljucivat MF,DF pod veznjake kao i FW,DF pod napadače
+veznjaci <- nogometasi %>% filter(Pos == "MF" & !is.na(X90s) & X90s >= 5)
+napadaci <- nogometasi %>% filter(Pos == "FW" & !is.na(X90s) & X90s >= 5)
+cat("Prosječan broj žutih kartona igrača veznog reda iznosi: ", mean(veznjaci$CrdY, na.rm = T), "\n")
+cat("Prosječan broj žutih kartona napadača iznosi: ", mean(napadaci$CrdY, na.rm = T))
 
 ```
 
+Vizualiziramo li podatke pomoću box plota:
+
+```{r}
+boxplot(veznjaci$CrdY, napadaci$CrdY, 
+        names = c('broj žutih kartona veznih igrača','broj žutih kartona napadača'),
+        main='Box plot raspodjele žutih kartona među veznjacima i napadačima')
+```
+
+dobijemo bolju sliku stvarne raspodjele žutih kartona u kojoj vidimo
+neke indikacije da bi mogla postojati razlika u broju žutih kartona.
+Ovakvo ispitivanje bismo mogli provesti klasičnim t-testom, no prvo se
+moramo uvjeriti da raspodjele kartona dolaze iz normalne razdiobe.
+
+Normalnost ćemo provjeriti histogramom i qq plotom.
+
+```{r}
+hist(veznjaci$CrdY, 
+     breaks=seq(min(veznjaci$CrdY, na.rm = T),max(veznjaci$CrdY, na.rm = T)+1,1),
+     main='Histogram količine žutih kartona igrača veznog reda',
+     xlab='broj žutih kartona')
+```
+
+```{r}
+qqnorm(veznjaci$CrdY, pch = 1, frame = FALSE,main='igrači veznog reda')
+qqline(veznjaci$CrdY, col = "steelblue", lwd = 2)
+```
+
+```{r}
+hist(napadaci$CrdY, 
+     breaks=seq(min(napadaci$CrdY, na.rm = T),max(napadaci$CrdY, na.rm = T)+1,1),
+     main='Histogram količine žutih kartona igrača veznog reda',
+     xlab='broj žutih kartona')
+```
+
+```{r}
+qqnorm(napadaci$CrdY, pch = 1, frame = FALSE,main='napadači')
+qqline(napadaci$CrdY, col = "steelblue", lwd = 2)
+```
+
+Provjeravamo jesu li varijance uzoraka značajno različite:
+
+```{r}
+cat("Varijanca broja žutih kartona kod veznjaka iznosi: ", var(veznjaci$CrdY), "\n")
+
+cat("Varijanca broja žutih kartona kod napadača iznosi: ", var(napadaci$CrdY))
+```
+
+ispitajmo...
+
+```{r}
+var.test(veznjaci$CrdY, napadaci$CrdY)
+```
+
+Ne odbacujemo H0 koja kaže da su varijance jednake. Dakle koristit ćemo
+**t-test za dva uzorka s pretpostavkom jednakih varijanci**.
+
+H0: broj žutih kartona između veznjaka i napadača je jednak.
+
+H1: broj žutih kartona kod veznjaka veći je od onog kod napadača.
+
+Odabir H1 motiviran je saznanjem da očekujemo da veznjaci imaju više
+žutih kartona.
+
+```{r}
+t.test(veznjaci$CrdY, napadaci$CrdY, alt = "greater", var.equal = TRUE)
+#izveo sam i za two.sided, outcome je isti
+```
+
+Budući da je p-value jako malen, možemo odbaciti H0 u korist H1.
+
 #### **Zaključci:**
 
-...
+Na razini pouzdanosti od 95% odbacujemo H0 u korist H1 odnosno
+zaključujemo da je broj žutih kartona kod veznjaka veći od onog kod
+napadača.
 
-### **6.** 
+### **6.**
 
 Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
 morali baviti i secirati što čini dobrog igrača ovisno o pozicijama.
