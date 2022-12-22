@@ -130,28 +130,6 @@ najbolji_asistenti
 
 #### Pozicije igrača
 
-**izbrisati** Po ovome vidimo da nemamo klasicne pozicije nego imamo
-vezni, napadaci, napadaci-vezni, vezni-obrambeni i slicne kombinacije
-
-```{r include=FALSE}
-table(nogometasi$Pos)
-table(factor(nogometasi$Pos)) %>% sort()
-samoVezni <- nogometasi %>% filter(Pos == "MF")
-samoNapadaci <- nogometasi %>% filter(Pos == "FW")
-samoObrambeni <- nogometasi %>% filter(Pos == "DF")
-golmani <- nogometasi %>% filter(Pos == "GK")
-vezniNapadaci <- nogometasi %>% filter(Pos == "MF,FW" | Pos == "FW,MF")
-vezniObrambeni <- nogometasi %>% filter(Pos == "MF,DF" | Pos == "DF,MF")
-obrambeniNapadaci <- nogometasi %>% filter(Pos == "DF,FW" | Pos == "FW,DF")
-nrow(samoVezni)
-nrow(samoObrambeni)
-nrow(samoNapadaci)
-nrow(vezniNapadaci)
-nrow(vezniObrambeni)
-nrow(obrambeniNapadaci)
-nrow(golmani)
-```
-
 Vizualizacija razdiobe igrača po pozicijama:
 
 ```{r}
@@ -171,6 +149,16 @@ koja je na prvi pogled dosta neuobičajena.
 distrStarosti <- hist(nogometasi$Age,
                       breaks = 20,
                       main="Razdioba starosti igrača",
+                      xlab="Starost",
+                      ylab='Frekvencija'
+                      )
+```
+
+```{r}
+x <- nogometasi %>% filter(!is.na(X90s) & X90s >= 9.5)
+distrStarosti <- hist(x$Age,
+                      breaks = 20,
+                      main="Starost igrača sa 25%+ minutaze",
                       xlab="Starost",
                       ylab='Frekvencija'
                       )
@@ -206,7 +194,11 @@ iznimke timova Burnley i Newcastle United.
 Pogledajmo sada koliko te iste mlade igrače timovi zapravo i koriste...
 
 ```{r}
+nogometasi_min <- nogometasi %>% filter(!is.na(Age)) %>% summarise(Team, kategorija = ifelse(Age <= 26, "mladi", "stari"), minutaza = X90s*90) %>% group_by(Team, kategorija) %>%  summarise(Team, kategorija, ukupno = sum(minutaza, na.rm = T)) %>% unique()
 
+ggplot(nogometasi_min, aes(x=Team, y=ukupno, fill=kategorija)) +
+    geom_bar(stat="identity", position="dodge") +
+    theme(axis.text.x = element_text(angle = 90)) 
 ```
 
 #### **Zaključci:**
@@ -224,12 +216,27 @@ mogli pretpostaviti **nezavisnost**.
 
 Moramo pripaziti i na činjenicu da postoji podosta igrača s vrlo malo
 minuta odigrano, stoga ima smisla gledati igrače koji su u cijeloj
-sezoni sveukupno barem 10% minuta odigrali.
+sezoni sveukupno barem 25% minuta odigrali.
+
+//samo napadaci i samo veznjaci
 
 ```{r}
 #pitanje: ima li smisla ukljucivat MF,DF pod veznjake kao i FW,DF pod napadače
-veznjaci <- nogometasi %>% filter(Pos == "MF" & !is.na(X90s) & X90s >= 4)
-napadaci <- nogometasi %>% filter(Pos == "FW" & !is.na(X90s) & X90s >= 4)
+veznjaci <- nogometasi %>% filter(Pos == "MF" & !is.na(X90s) & X90s >= 9.5)
+napadaci <- nogometasi %>% filter(Pos == "FW" & !is.na(X90s) & X90s >= 9.5)
+cat("Prosječan broj žutih kartona igrača veznog reda iznosi: ", mean(veznjaci$CrdY, na.rm = T), "\n")
+cat("Prosječan broj žutih kartona napadača iznosi: ", mean(napadaci$CrdY, na.rm = T))
+
+```
+
+// napadaci su "FW", "FW,MF", "FW, DF"
+
+// veznjaci su "MF", "MF,FW", "MF,DF"
+
+```{r}
+#pitanje: ima li smisla ukljucivat MF,DF pod veznjake kao i FW,DF pod napadače
+veznjaci <- nogometasi %>% filter(Pos == "MF" | Pos == "MF,FW" | Pos == "MF,DF") %>% filter(!is.na(X90s) & X90s >= 9.5)
+napadaci <- nogometasi %>% filter(Pos == "FW" | Pos == "FW,MF" | Pos == "FW,DF") %>% filter(!is.na(X90s) & X90s >= 9.5)
 cat("Prosječan broj žutih kartona igrača veznog reda iznosi: ", mean(veznjaci$CrdY, na.rm = T), "\n")
 cat("Prosječan broj žutih kartona napadača iznosi: ", mean(napadaci$CrdY, na.rm = T))
 
@@ -252,7 +259,7 @@ Normalnost ćemo provjeriti histogramom i qq plotom.
 
 ```{r}
 hist(veznjaci$CrdY, 
-     breaks=seq(min(veznjaci$CrdY, na.rm = T),max(veznjaci$CrdY, na.rm = T)+1,1),
+     breaks=seq(min(veznjaci$CrdY, na.rm = T),max(veznjaci$CrdY, na.rm = T)+1,0.25),
      main='Histogram količine žutih kartona igrača veznog reda',
      xlab='broj žutih kartona')
 ```
@@ -264,8 +271,8 @@ qqline(veznjaci$CrdY, col = "steelblue", lwd = 2)
 
 ```{r}
 hist(napadaci$CrdY, 
-     breaks=seq(min(napadaci$CrdY, na.rm = T),max(napadaci$CrdY, na.rm = T)+1,1),
-     main='Histogram količine žutih kartona igrača veznog reda',
+     breaks=seq(min(napadaci$CrdY, na.rm = T),max(napadaci$CrdY, na.rm = T)+1,0.25),
+     main='Histogram količine žutih kartona napadača',
      xlab='broj žutih kartona')
 ```
 
@@ -331,7 +338,7 @@ Došli smo do sljedećih zaključaka:
 
 ...
 
-### **7. *XZ*-test**
+### **7.**
 
 Svi koji prate nogomet malo detaljnije znaju čiji igrači se cijene.
 Brazilci su najbolji dribleri, Španjolci najbolji u tiki-taki, Hrvati
