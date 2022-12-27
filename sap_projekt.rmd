@@ -322,11 +322,29 @@ napadača.
 
 Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
 morali baviti i secirati što čini dobrog igrača ovisno o pozicijama.
-Došli smo do sljedećih zaključaka:
 
--   **nesto nesto**
--   **nesto nesto**
--   **nesto nesto**
+G/A bez golmana i branica
+
+```{r}
+nog <- nogometasi %>% filter(Pos == "FW" | Pos == "FW,MF" | Pos == "MF,FW" | Pos == "MF") %>% filter(X90s > 19)
+dobri <- nog %>% filter(Ast > 6 | Gls > 12)
+losi <- nog %>% filter(Ast <= 6 & Gls <= 12)
+ggplot(dobri, aes(x = Gls, y = Ast)) + geom_jitter(width = 0.4, height = 0.4,) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losi, aes(x = Gls, y = Ast), width = 0.3, height = 0.3)
+```
+
+xG/xA bez golmana i branica
+
+```{r}
+dobrixG <- nog %>% filter(xG > 9.5 | xA > 5)
+losixG <- nog %>% filter(xG <= 9.5 & xA <= 5)
+ggplot(dobrixG, aes(x = xG, y = xA)) + geom_jitter(width = 0.3, height = 0.3) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losixG,aes(x = xG, y = xA), width = 0.3, height = 0.3 )
+```
+
+Gper90/Aper90 bez golmana i branica
+
+```{r}
+ggplot(nog, aes(x = Gls.1, y = Ast.1)) + geom_jitter(width = 0.3, height = 0.3,) + geom_text(aes(label = Player), check_overlap = T, size = 2.5)
+```
 
 **blablabla** ...
 
