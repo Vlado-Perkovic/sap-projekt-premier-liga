@@ -100,6 +100,13 @@ nogometasi$Player[nogometasi$Player == "Tomá\u009a Sou?ek"] <- "Tomáš Souček
 
 ```
 
+Konverzija odigranih minuta iz char u numeric:
+
+```{r}
+nogometasi$Min <- as.numeric(gsub(",", "", nogometasi$Min))
+```
+
+
 ### **3. Pregled sezone**
 
 ```{r include=FALSE}
@@ -200,8 +207,76 @@ ggplot(nogometasi_min, aes(x=Team, y=ukupno, fill=kategorija)) +
     geom_bar(stat="identity", position="dodge") +
     theme(axis.text.x = element_text(angle = 90)) 
 ```
+Kod analize u obzir ćemo uzeti mlade igrače koji su upisali barem 90 minuta.
+
+```{r}
+mladi90 <- nogometasi %>% filter(Age <= 25 & Min >= 90)
+```
+
+Pogledajmo koliko su u prosjeku klubovi davali minuta svojim mladim igračima
+
+```{r}
+boxplot(mladi90$Min ~ mladi90$Team, xlab = "Team", ylab = "Minutes played")
+abline(h=mean(mladi90$Min), col = "Red")
+
+```
+Testirat ćemo homogenost varijance raspodijele minuta mladih igraca po klubovima:
+```{r}
+bartlett.test(mladi90$Min ~ mladi90$Team)
+```
+Sada je potrebno testirati normalnost distribucije odigranih minuta za igrače do 25 godina ukupno i po klubovima: 
+```{r}
+qqnorm(mladi90$Min, pch = 1, frame = FALSE,main='Odigrane minute za igrače do 25 godina')
+qqline(mladi90$Min, col = "steelblue", lwd = 2)
+```
+```{r}
+require(nortest)
+
+lillie.test(mladi90$Min[mladi90$Team == "Arsenal"])
+lillie.test(mladi90$Min[mladi90$Team == "Aston Villa"])
+lillie.test(mladi90$Min[mladi90$Team == "Brentford"])
+lillie.test(mladi90$Min[mladi90$Team == "Brighton & Hove Albion"])
+lillie.test(mladi90$Min[mladi90$Team == "Burnley"])
+lillie.test(mladi90$Min[mladi90$Team == "Chelsea"])
+lillie.test(mladi90$Min[mladi90$Team == "Crystal Palace"])
+lillie.test(mladi90$Min[mladi90$Team == "Leeds United"])
+lillie.test(mladi90$Min[mladi90$Team == "Leicester City"])
+lillie.test(mladi90$Min[mladi90$Team == "Liverpool"])
+lillie.test(mladi90$Min[mladi90$Team == "Manchester City"])
+lillie.test(mladi90$Min[mladi90$Team == "Manchester United"])
+lillie.test(mladi90$Min[mladi90$Team == "Newcastle United"])
+lillie.test(mladi90$Min[mladi90$Team == "Norwich City"])
+lillie.test(mladi90$Min[mladi90$Team == "Southampton"])
+lillie.test(mladi90$Min[mladi90$Team == "Tottenham Hotspur"])
+lillie.test(mladi90$Min[mladi90$Team == "Watford"])
+lillie.test(mladi90$Min[mladi90$Team == "West Ham United"])
+lillie.test(mladi90$Min[mladi90$Team == "Wolverhampton Wanderers"])
+```
+Na razini znacajnosti od 5% jedino Liverpool pravi probleme kod normalnosti.
+Iako varijanca i sredina ne odudaraju, uzorak ima izražene stršeće vrijednosti (Trent i Jota)
+
+```{r}
+(mladi90 %>% filter(Team == "Liverpool"))[, c('Player', 'Min')]
+
+mladi90bezL <- mladi90 %>% filter(Team != "Liverpool")
+```
+Sada kada smo pretpostavili homogenost varijance, normalnost i nezavisnost provest ćemo ANOVA test:
+  Nulta hipoteza: Raspodijela minuta igračima do 25 godina se ne razlikuje po klubovima
+  Alternativna hipoteza: Raspodijela minuta igračima do 25 godina razlikuje se u barem jednom klubu
+  alpha = 0.05
+
+```{r}
+anova(lm(Min ~ Team, data = mladi90bezL))
+```
 
 #### **Zaključci:**
+Ne odbacujemo nultu hipotezu da se raspodijela minuta razlikuje po klubovima.
+
+Liverpool nismo uvrstili u test jer nismo mogli pretpostaviti normalnost, ali ni za tu ekipu ne možemo reći da značajno odstupa od prosjeka.
+```{r}
+mean(mladi90$Min[mladi90$Team == "Liverpool"])
+mean(mladi90$Min)
+```
 
 ...
 
