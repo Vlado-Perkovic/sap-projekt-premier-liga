@@ -216,11 +216,11 @@ mogli pretpostaviti **nezavisnost**.
 
 Moramo pripaziti i na činjenicu da postoji podosta igrača s vrlo malo
 minuta odigrano, stoga ima smisla gledati igrače koji su u cijeloj
-sezoni sveukupno barem 25% minuta odigrali.
+sezoni sveukupno barem 50% minuta odigrali.
 
 //samo napadaci i samo veznjaci
 
-```{r}
+```{r include=FALSE}
 #pitanje: ima li smisla ukljucivat MF,DF pod veznjake kao i FW,DF pod napadače
 veznjaci <- nogometasi %>% filter(Pos == "MF" & !is.na(X90s) & X90s >= 9.5)
 napadaci <- nogometasi %>% filter(Pos == "FW" & !is.na(X90s) & X90s >= 9.5)
@@ -235,8 +235,8 @@ cat("Prosječan broj žutih kartona napadača iznosi: ", mean(napadaci$CrdY, na.
 
 ```{r}
 #pitanje: ima li smisla ukljucivat MF,DF pod veznjake kao i FW,DF pod napadače
-veznjaci <- nogometasi %>% filter(Pos == "MF" | Pos == "MF,FW" | Pos == "MF,DF") %>% filter(!is.na(X90s) & X90s >= 9.5)
-napadaci <- nogometasi %>% filter(Pos == "FW" | Pos == "FW,MF" | Pos == "FW,DF") %>% filter(!is.na(X90s) & X90s >= 9.5)
+veznjaci <- nogometasi %>% filter(Pos == "MF" | Pos == "MF,FW" | Pos == "MF,DF") %>% filter(!is.na(X90s) & X90s >= 18)
+napadaci <- nogometasi %>% filter(Pos == "FW" | Pos == "FW,MF" | Pos == "FW,DF") %>% filter(!is.na(X90s) & X90s >= 18)
 cat("Prosječan broj žutih kartona igrača veznog reda iznosi: ", mean(veznjaci$CrdY, na.rm = T), "\n")
 cat("Prosječan broj žutih kartona napadača iznosi: ", mean(napadaci$CrdY, na.rm = T))
 
@@ -281,6 +281,10 @@ qqnorm(napadaci$CrdY, pch = 1, frame = FALSE,main='napadači')
 qqline(napadaci$CrdY, col = "steelblue", lwd = 2)
 ```
 
+Budući da znamo da je t-test poprilično robustan, dajemo si za pravo
+koristiti ga iako gore prikazane razdiobe nisu distribuirane normalnom
+razdiobom, no nisu ni predaleko od iste.
+
 Provjeravamo jesu li varijance uzoraka značajno različite:
 
 ```{r}
@@ -310,7 +314,7 @@ t.test(veznjaci$CrdY, napadaci$CrdY, alt = "greater", var.equal = TRUE)
 #izveo sam i za two.sided, outcome je isti
 ```
 
-Budući da je p-value jako malen, možemo odbaciti H0 u korist H1.
+Budući da je p-value značajno malen, možemo odbaciti H0 u korist H1.
 
 #### **Zaključci:**
 
@@ -323,27 +327,80 @@ napadača.
 Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
 morali baviti i secirati što čini dobrog igrača ovisno o pozicijama.
 
-G/A bez golmana i branica
+Kao mjere uspješnosti igrača na raspolaganju imamo broj golova i broj
+asistencija. Naravno nije objektivno usporedjivat obrambene vezne i
+napadače prema broju golova tako da za neke pozicije sljedeća analiza
+nije najpogodnija.
+
+G/A bez golmana
 
 ```{r}
-nog <- nogometasi %>% filter(Pos == "FW" | Pos == "FW,MF" | Pos == "MF,FW" | Pos == "MF") %>% filter(X90s > 19)
+nog <- nogometasi %>% filter(Pos != "GK") %>% filter(X90s > 19)
 dobri <- nog %>% filter(Ast > 6 | Gls > 12)
 losi <- nog %>% filter(Ast <= 6 & Gls <= 12)
-ggplot(dobri, aes(x = Gls, y = Ast)) + geom_jitter(width = 0.4, height = 0.4,) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losi, aes(x = Gls, y = Ast), width = 0.3, height = 0.3)
+ggplot(dobri, aes(x = Ast, y = Gls)) + geom_jitter(width = 0.4, height = 0.4) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losi, aes(x = Ast, y = Gls), width = 0.3, height = 0.3)
 ```
 
-xG/xA bez golmana i branica
+xG/xA bez golmana
 
 ```{r}
-dobrixG <- nog %>% filter(xG > 9.5 | xA > 5)
-losixG <- nog %>% filter(xG <= 9.5 & xA <= 5)
-ggplot(dobrixG, aes(x = xG, y = xA)) + geom_jitter(width = 0.3, height = 0.3) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losixG,aes(x = xG, y = xA), width = 0.3, height = 0.3 )
+dobrixG <- nog %>% filter(xG > 9.5 | xA > 6)
+losixG <- nog %>% filter(xG <= 9.5 & xA <= 6)
+ggplot(dobrixG, aes(x = xA, y = xG)) + geom_jitter(width = 0.3, height = 0.3) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losixG,aes(x = xA, y = xG), width = 0.3, height = 0.3 )
 ```
 
-Gper90/Aper90 bez golmana i branica
+\*\*napomena: u gornja dva grafa dodan je *jitter* efekt kako bi se
+stekao bolji dojam količine točaka jer se koriste diskretni podaci\*\*
 
-```{r}
+Gper90/Aper90 bez golmana
+
+```{r include=FALSE}
 ggplot(nog, aes(x = Gls.1, y = Ast.1)) + geom_jitter(width = 0.3, height = 0.3,) + geom_text(aes(label = Player), check_overlap = T, size = 2.5)
+```
+
+**Određivanje uspješnosti po broju golova preko mjere očekivanih
+golova.**
+
+Osobi koja ne prati nogomet pojam očekivanih golova (xG) je možda
+nepoznat pa ćemo napomenuti da se radi o mjeri koja pokazuje procjenu
+vjerojatnosti u kojima neka prilika završi zgoditkom.
+
+Gls/xG
+
+```{r}
+ggplot(nog, aes(x = xG, y = Gls)) + geom_point() + stat_smooth(method = lm, formula = y~x, se = F)
+```
+
+Prema grafu se da naslutiti da postoji jasna linearna veza između golova
+i očekivanih golova što daje motivaciju za daljne istraživanje.
+
+```{r}
+fit.gls = lm(Gls~xG,data=nog)
+```
+
+```{r}
+plot(fit.gls$residuals)
+summary(fit.gls)
+hist((fit.gls$residuals))
+hist(rstandard(fit.gls))
+```
+
+A/xA
+
+```{r}
+fit.ast = lm(Ast~xA,data=nog)
+ggplot(nog, aes(x = xA, y = Ast)) + geom_point() + stat_smooth(method = lm, formula = y~x, se = F)
+```
+
+```{r}
+plot(fit.ast$residuals)
+
+```
+
+G+A/npxG+xA
+
+```{r}
+ggplot(nog, aes(x = npxG.xA, y = G.A)) + geom_point() + stat_smooth(method = lm, formula = y~x, se = F)
 ```
 
 **blablabla** ...
