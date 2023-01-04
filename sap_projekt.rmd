@@ -3,8 +3,8 @@ title: "Statistička analiza podataka - projekt"
 author: "Sapunanje"
 date: "`r Sys.Date()`"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 editor_options:
   markdown:
     wrap: 72
@@ -190,7 +190,7 @@ nogometasi_god <- nogometasi %>% summarise(mladi = ifelse(Age <= 25, 1, 0), Team
 
 ggplot(nogometasi_god, aes(x=Team, y=value, fill=kategorija)) +
     geom_bar(stat="identity", position="dodge") +
-    theme(axis.text.x = element_text(angle = 90)) 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) 
   #scale_fill_brewer(palette = "Set1")
 ```
 
@@ -204,7 +204,7 @@ nogometasi_min <- nogometasi %>% filter(!is.na(Age)) %>% summarise(Team, kategor
 
 ggplot(nogometasi_min, aes(x=Team, y=ukupno, fill=kategorija)) +
     geom_bar(stat="identity", position="dodge") +
-    theme(axis.text.x = element_text(angle = 90)) 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) 
 ```
 
 Kod analize u obzir ćemo uzeti mlade igrače koji su upisali barem 90
@@ -218,9 +218,10 @@ Pogledajmo koliko su u prosjeku klubovi davali minuta svojim mladim
 igračima
 
 ```{r}
-boxplot(mladi90$Min ~ mladi90$Team, xlab = "Team", ylab = "Minutes played")
-abline(h=mean(mladi90$Min), col = "Red")
-
+ggplot(mladi90, aes(x = Team, y = Min)) + 
+  geom_boxplot(outlier.color = "red") +
+  geom_abline(intercept = mean(mladi90$Min), col = "Red") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ```
 
 Testirat ćemo homogenost varijance raspodijele minuta mladih igraca po
@@ -264,10 +265,10 @@ lillie.test(mladi90$Min[mladi90$Team == "Wolverhampton Wanderers"])
 
 Na razini znacajnosti od 5% jedino Liverpool pravi probleme kod
 normalnosti. Iako varijanca i sredina ne odudaraju, uzorak ima izražene
-stršeće vrijednosti (Trent i Jota)
+stršeće vrijednosti (Trent i Jota).
 
 ```{r}
-(mladi90 %>% filter(Team == "Liverpool"))[, c('Player', 'Min')]
+mladi90 %>% filter(Team == "Liverpool") %>% select(Player, Min)
 
 mladi90bezL <- mladi90 %>% filter(Team != "Liverpool")
 ```
@@ -276,7 +277,7 @@ Sada kada smo pretpostavili homogenost varijance, normalnost i
 nezavisnost provest ćemo ANOVA test: Nulta hipoteza: Raspodijela minuta
 igračima do 25 godina se ne razlikuje po klubovima Alternativna
 hipoteza: Raspodijela minuta igračima do 25 godina razlikuje se u barem
-jednom klubu alpha = 0.05
+jednom klubu alpha = 0.05.
 
 ```{r}
 anova(lm(Min ~ Team, data = mladi90bezL))
@@ -415,7 +416,7 @@ Na razini pouzdanosti od 95% odbacujemo H0 u korist H1 odnosno
 zaključujemo da je broj žutih kartona kod veznjaka veći od onog kod
 napadača.
 
-### **6.**
+#### **6. Možete li na temelju zadanih parametara odrediti uspješnost pojedinog igrača?**
 
 Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
 morali baviti i secirati što čini dobrog igrača ovisno o pozicijama.
@@ -428,10 +429,10 @@ nije najpogodnija.
 G/A bez golmana
 
 ```{r}
-nog <- nogometasi %>% filter(Pos != "GK") %>% filter(X90s > 19)
+nog <- nogometasi %>% filter(Pos != "GK") %>% filter(X90s >= 19)
 dobri <- nog %>% filter(Ast > 6 | Gls > 12)
 losi <- nog %>% filter(Ast <= 6 & Gls <= 12)
-ggplot(dobri, aes(x = Ast, y = Gls)) + geom_jitter(width = 0.4, height = 0.4) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losi, aes(x = Ast, y = Gls), width = 0.3, height = 0.3)
+ggplot(dobri, aes(x = Ast, y = Gls)) + geom_jitter(width = 0.4, height = 0.4, alpha = 0.4) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losi, aes(x = Ast, y = Gls), width = 0.3, height = 0.3, alpha = 0.4)
 ```
 
 xG/xA bez golmana
@@ -439,7 +440,7 @@ xG/xA bez golmana
 ```{r}
 dobrixG <- nog %>% filter(xG > 9.5 | xA > 6)
 losixG <- nog %>% filter(xG <= 9.5 & xA <= 6)
-ggplot(dobrixG, aes(x = xA, y = xG)) + geom_jitter(width = 0.3, height = 0.3) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losixG,aes(x = xA, y = xG), width = 0.3, height = 0.3 )
+ggplot(dobrixG, aes(x = xA, y = xG)) + geom_jitter(width = 0.3, height = 0.3, alpha = 0.4) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losixG,aes(x = xA, y = xG), width = 0.3, height = 0.3, alpha = 0.4 )
 ```
 
 \*\*napomena: u gornja dva grafa dodan je *jitter* efekt kako bi se
@@ -461,7 +462,7 @@ vjerojatnosti u kojima neka prilika završi zgoditkom.
 Gls/xG
 
 ```{r}
-ggplot(nog, aes(x = xG, y = Gls)) + geom_point() + stat_smooth(method = lm, formula = y~x, se = F)
+ggplot(nog, aes(x = xG, y = Gls)) + geom_point(alpha = 0.4) + stat_smooth(method = lm, formula = y~x, se = F)
 ```
 
 Prema grafu se da naslutiti da postoji jasna linearna veza između golova
@@ -471,11 +472,50 @@ i očekivanih golova što daje motivaciju za daljne istraživanje.
 fit.gls = lm(Gls~xG,data=nog)
 ```
 
+Potrebno je provjeriti jesu li narušene osnovne pretpostavke o
+rezidualima prije nego nastavimo dalje. Pretpostavke reziduala su
+normalnost i homogenost varijance.
+
+**Normalnost**
+
+Normalnost možemo provjeriti grafički pomoću histograma.
+
+```{r}
+hist((fit.gls$residuals))
+```
+
+Statistički ju možemo provjeriti pomoću Kolmogorov-Smirnovljevog testa.
+
+```{r}
+require(nortest)
+lillie.test(fit.gls$residuals)
+```
+
+Budući da reziduali ne pokazuju preveliko odstupanje od normalnosti (u
+smislu zakrivljenosti ili drugih razlika u distribuciji) te je poznato
+da je t-test robustan na (ne)normalnost - u analizi podataka se u
+ovakvim slučajevima i dalje mogu donositi statistički zaključci iz
+regresijskih modela.
+
+Homogenost varijance provjerit ćemo grafički prikazom reziduala. Bitno
+nam je da se reziduali ne šire povećanjem y.
+
 ```{r}
 plot(fit.gls$residuals)
+```
+
+Pogledajmo rezultat analize...
+
+```{r}
 summary(fit.gls)
-hist((fit.gls$residuals))
-hist(rstandard(fit.gls))
+```
+
+Kao mjeru valjanosti linearne veze razmatramo varijablu R^2^. Ona iznosi
+0.854 što je dovoljno dobro za reći da mjerom xG relativno dobro možemo
+odrediti uspješnost igrača.
+
+```{r include=FALSE}
+cor.test(nog$xG,nog$Gls)
 ```
 
 A/xA
@@ -490,21 +530,134 @@ plot(fit.ast$residuals)
 
 ```
 
+**Određivanje uspješnosti po broju asistencija preko mjere očekivanih
+asistencija.**
+
+Prikažimo raspodjelu na grafu...
+
+```{r}
+ggplot(nog, aes(x = xA, y = Ast)) + geom_point(alpha = 0.4) + stat_smooth(method = lm, formula = y~x, se = F)
+```
+
+Prema grafu se da naslutiti da postoji linearna veza između te dvije
+mjere, no uvjerljivo kao golovi. Svejedno, provest ćemo istraživanje i
+vidjeti rezultate.
+
+```{r}
+fit.ast = lm(Ast~xA,data=nog)
+```
+
+Potrebno je provjeriti jesu li narušene osnovne pretpostavke o
+rezidualima prije nego nastavimo dalje. Pretpostavke reziduala su
+normalnost i homogenost varijance.
+
+**Normalnost**
+
+Normalnost možemo provjeriti grafički pomoću histograma.
+
+```{r}
+hist((fit.ast$residuals))
+```
+
+Statistički ju možemo provjeriti pomoću Kolmogorov-Smirnovljevog testa.
+
+```{r}
+require(nortest)
+lillie.test(fit.ast$residuals)
+```
+
+Budući da reziduali ne pokazuju preveliko odstupanje od normalnosti (u
+smislu zakrivljenosti ili drugih razlika u distribuciji) te je poznato
+da je t-test robustan na (ne)normalnost - u analizi podataka se u
+ovakvim slučajevima i dalje mogu donositi statistički zaključci iz
+regresijskih modela.
+
+**Homogenost**
+
+Homogenost varijance provjerit ćemo grafički prikazom reziduala. Bitno
+nam je da se reziduali ne šire povećanjem y.
+
+```{r}
+plot(fit.ast$residuals)
+```
+
+Pogledajmo rezultat analize...
+
+```{r}
+summary(fit.ast)
+```
+
+Kao mjeru valjanosti linearne veze razmatramo varijablu R^2^. Ona iznosi
+0.64 što nije dovoljno dobro kao prethodno istraživanje. Iako je R2
+relativna mjera, smatramo da nije dovoljno dobra za reći da mjerom xA
+možemo precizno odrediti uspješnost igrača.
+
+Ovaj rezultat prirodno ima smisla kada pogledamo nogometni kontekst
+očekivane asistencije koja ovisi o tome hoće li asistirani igrač zabiti.
+
+```{r include=FALSE}
+cor.test(nog$xG,nog$Gls)
+```
+
+**Određivanje uspješnosti po broju golova i asistencija bez kaznenih
+udaraca u po 90 min preko mjere očekivanih golova i asistencija bez
+kaznenih udaraca po 90 min.**
+
 G+A/npxG+xA
 
 ```{r}
-ggplot(nog, aes(x = npxG.xA, y = G.A)) + geom_point() + stat_smooth(method = lm, formula = y~x, se = F)
+ggplot(nog, aes(x = npxG.xA.1, y = G.A.PK)) + geom_point() + stat_smooth(method = lm, formula = y~x, se = F)
 ```
 
-**blablabla** ...
+Možemo opravdano naslutiti da postoji jaka linearna veza između ovih
+mjera.
 
 ```{r}
-
+fit.ga = lm(G.A.PK~npxG.xA.1,data=nog)
 ```
 
-#### **Zaključci:**
+Potrebno je provjeriti jesu li narušene osnovne pretpostavke o
+rezidualima prije nego nastavimo dalje. Pretpostavke reziduala su
+normalnost i homogenost varijance.
 
-...
+**Normalnost**
+
+Normalnost možemo provjeriti grafički pomoću histograma.
+
+```{r}
+hist((fit.ga$residuals))
+```
+
+Statistički ju možemo provjeriti pomoću Kolmogorov-Smirnovljevog testa.
+
+```{r}
+require(nortest)
+lillie.test(fit.ga$residuals)
+```
+
+Budući da reziduali ne pokazuju preveliko odstupanje od normalnosti (u
+smislu zakrivljenosti ili drugih razlika u distribuciji) te je poznato
+da je t-test robustan na (ne)normalnost - u analizi podataka se u
+ovakvim slučajevima i dalje mogu donositi statistički zaključci iz
+regresijskih modela.
+
+**Homogenost**
+
+Homogenost varijance provjerit ćemo grafički prikazom reziduala. Bitno
+nam je da se reziduali ne šire povećanjem y.
+
+```{r}
+plot(fit.ga$residuals)
+```
+
+Pogledajmo rezultat analize...
+
+```{r}
+summary(fit.ga)
+```
+
+Kao mjeru valjanosti linearne veze razmatramo varijablu R^2^. Ona iznosi
+0.84 što opravdava naše izvorne pretpostavke.
 
 ### **7.**
 
