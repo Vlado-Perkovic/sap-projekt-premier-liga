@@ -666,17 +666,86 @@ Brazilci su najbolji dribleri, Španjolci najbolji u tiki-taki, Hrvati
 najbolji u penalima, ali u Engleskoj su najbolji Englezi. Javnost to
 zove *"English tax"* i time se cilja na činjenicu kako engleski klubovi
 skuplje plaćaju i prodaju domaće igrače u odnosu na strane. Je li to
-opravdano, pokazat će nam naš xz-test. Koristit ćemo ga jer **razlog** i
-napokon ćemo saznati doprinose li oni sveukupnom uspjehu tima ili je to
+opravdano, pokazat će nam ANOVA. Koristit ćemo ju jer ćemo imati dvije
+skupine (strani i domaći igrači) gdje ćemo pretpostaviti jednakost te
+ćemo napokon saznati doprinose li oni sveukupnom uspjehu tima ili je to
 još jedna preuveličana engleska nogometna bajka. ...
 
-```{r}
+Prvi korak koji moramo napraviti je razdvojiti igrače po nacionalnosti,
+tj. odvojiti domaće igrače od stranih.
 
+```{r}
+nogometasi$Foreigners <- ifelse(nogometasi$Nation=="ENG", "ENG", "Other")
+nogometasi
+```
+
+Pošto kod procjene uspješnosti možemo samo koristiti golove i
+asistencije jer nam ostali podaci nisu dostupni, a želimo vidjeti
+uspješnost, u obzir ćemo uzeti igrače koji su imali barem pet golova ili
+asistencija u ligi i koji su odigrali barem 4 utakmice.
+
+```{r}
+# glimpse(nogometasi)
+korisni <- nogometasi %>% filter(Gls+Ast>5 & X90s > 4)
+```
+
+Prvo želimo prikazati odnos količine stranih i domaćih igrača po
+klubovima
+
+```{r}
+nogometasi_nat <- korisni %>% summarise(English = ifelse(Nation == "ENG", 1, 0), Team) %>% group_by(Team) %>% summarise(English = sum(English, na.rm = T), Others = n() - English) %>% pivot_longer(cols = English:Others, names_to = "Foreigners")
+
+ggplot(nogometasi_nat, aes(x=Team, y=value, fill=Foreigners)) +
+    geom_bar(stat="identity", position="dodge") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) 
+```
+
+Vidimo da većina klubova ima veći broj stranih igrača (uz već spomenute
+kriterije), što je i očekivano kada se u obzir uzme kako Engleska ima
+puno manji broj stanovnika od ostatka svijeta. Kada se maknu naši
+kriteriji, više nije tolika razlika, ali je još uvijek jasno vidljiva.
+
+Pogledajmo koliko u prosjeku domaći i strani igrači imaju doprinos u
+golovima i asistencijama po utakmici:
+
+```{r}
+ggplot(korisni, aes(x = Foreigners, y = G.A.PK)) + 
+  geom_boxplot(outlier.color = "red") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+Možemo vidjeti kako su vrijednosti slične. Sljedeći korak je testiranje
+homogenosti varijance raspodijele stranih i domaćih igrača u odnosu sa
+golovima i asistencijama:
+
+```{r}
+bartlett.test(korisni$G.A.PK ~ korisni$Foreigners)
+```
+
+Utvrdili smo da su rezultati homogeni. Sada je potrebno testirati
+normalnost distribucije golova i asistencija po nacionalnost (domaći
+\<-\> strani) :
+
+```{r}
+require(nortest)
+lillie.test(korisni$G.A.PK[korisni$Foreigners == "ENG"])
+lillie.test(korisni$G.A.PK[korisni$Foreigners == "Other"])
+```
+
+Sada kada smo pretpostavili homogenost varijance, normalnost i
+nezavisnost provest ćemo ANOVA test: **Nulta hipoteza:** Engleski
+nogometaši imaju jednak doprinos uspjehu svojeg tima kao i strani
+nogometaši. Za potrebe testa ćemo koristiti alpha = 0.05.
+
+```{r}
+anova(lm(G.A.PK ~ Foreigners, data = korisni))
 ```
 
 #### **Zaključci:**
 
-...
+Ne odbacujemo nultu hipotezu da su engleski nogometaši uspješniji od
+stranih. Dobivena p-vrijednost je vrlo velika i to nam govori kako je
+naša prvotna pretpostavka bila točna, a to
 
 ### **8. Rezultati**
 
