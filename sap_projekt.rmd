@@ -49,6 +49,7 @@ dobivanje rezultata koji su validni.
     pojedinog igrača?
 7.  Doprinose li sveukupnom uspjehu svoga tima više "domaći" igrači (tj.
     igrači engleske nacionalnosti) ili strani igrači?
+8.  Zaključak
 
 ### **2. Osnovna prilagodba podataka**
 
@@ -619,3 +620,23 @@ anova(lm(G.A.PK ~ Foreigners, data = korisni))
 Ne odbacujemo nultu hipotezu da su engleski nogometaši uspješniji od
 stranih. Dobivena p-vrijednost je velika i to nam govori kako je naša
 prvotna pretpostavka bila točna.
+
+### **8. Zaključak**
+
+Ukupni zaključak cijelog rada je podijeljen. Svidjela nam se tema, ali
+smo puno vremena proveli u razmatranju, razmišljanju i dogovoru oko
+pravih pristupa zadacima. Predstavljalo nam je problem što su podaci
+upravo takvi kakvi jesu, realni, jer u idealnom svijetu zadataka iz
+zbirke, naviknuti smo na prilagođene podatke, podatke koji ne odstupaju,
+prema kojima možemo pretpostaviti normalnost, homogenost... Ovdje to
+nije toliko jednostavno, podatke smo morali prilagođavati i filtrirati
+kako bi mogli zadovoljiti uvjete koje naši testovi zahtijevaju. Zbog
+toga su naši testovi, a i njihovi zaključci, ograničeni i treba ih uzeti
+sa zadrškom. Također, neke segmente smo morali ignorirati, kao što su
+golmani kada je u pitanju bila uspješnost igrača, jer nismo imali
+podatke prema kojima bi ih mogli uspoređivati.\
+Puno smo naučili iz ovog projekta i to će nam iskustvo sigurno u
+budućnosti pomoći ako se susretnemo sa sličnim problemima. Dali smo sve
+od sebe i probali iskoristiti svo znanje koje smo do sada dobili na ovom
+i prijašnjim kolegijima kako bismo uspješno došli do što boljih
+zaključaka.
