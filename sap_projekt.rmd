@@ -1,0 +1,642 @@
+---
+title: "Statistička analiza podataka - projekt"
+author: "Sapunanje"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(base)
+library(dbplyr)
+library(data.table)
+library(datasets)
+library(magrittr)
+library(tidyr)
+library(dplyr)
+library(readr)
+library(stringr)
+library(lubridate)
+library(ggplot2)
+```
+
+## **Statistika nogometaša engleske Premier lige**
+
+#### Studenti: Karlo Boroš, Petar Novak, Vlado Perković i Mislav Rendulić
+
+**Asistent: Krunoslav Jurčić**
+
+**Cilj** ovoga projekta je uzeti dane podatke i iz njih probati izvući
+zaključke i faktore koji mogu utjecati na rezultat, broj golova i sl.
+Naravno, nije potrebno naglasiti važnost korištenja ispravnih testova te
+dobivanje rezultata koji su validni.
+
+### **1. Sadržaj**
+
+1.  Sadržaj
+2.  Osnovna prilagodba podataka
+3.  Pregled sezone
+4.  Postoji li razlika u broju odigranih minuta mladih igrača (do 25
+    godina) među premierligaškim ekipama?
+5.  Dobivaju li u prosjeku više žutih kartona napadači ili igrači veznog
+    reda?
+6.  Možete li na temelju zadanih parametara odrediti uspješnost
+    pojedinog igrača?
+7.  Doprinose li sveukupnom uspjehu svoga tima više "domaći" igrači (tj.
+    igrači engleske nacionalnosti) ili strani igrači?
+8.  Zaključak
+
+### **2. Osnovna prilagodba podataka**
+
+Podatke je prvo potrebno učitati. Bitno je dobro ih proučiti kako ne
+bismo slučajno pogriješili u nekom zaključku. Nakon dobre analize možemo
+krenuti sa našim zadacima.
+
+```{r}
+nogometasi <- read.csv('dataset.csv', encoding = "UTF-8", stringsAsFactors = F)
+```
+
+```{r include=FALSE}
+nogometasi$Nation <- str_sub(nogometasi$Nation, -3)
+```
+
+Nakon enkodiranja početnih podataka, postajala su odstupanja od stvarnih
+imena kod nekih igrača pa smo ta imena ručno ispravili.
+
+```{r include=FALSE}
+nogometasi$Player[nogometasi$Player == "Halil Dervi?o?lu"] <- "Halil Dervişoğlu"
+nogometasi$Player[nogometasi$Player == "?lkay Gündo?an"] <- "İlkay Gündoğan"
+nogometasi$Player[nogometasi$Player == "?ukasz Fabia?ski"] <- "Łukasz Fabiański"
+nogometasi$Player[nogometasi$Player == "Asmir Begovi?"] <- "Asmir Begović"
+nogometasi$Player[nogometasi$Player == "Ça?lar Söyüncü"] <- "Çağlar Söyüncü"
+nogometasi$Player[nogometasi$Player == "Eldin Jakupovi?"] <- "Eldin Jakupović"
+nogometasi$Player[nogometasi$Player == "Luka Milivojevi?"] <- "Luka Milivojević"
+nogometasi$Player[nogometasi$Player == "Mat?j Vydra"] <- "Matěj Vydra"
+nogometasi$Player[nogometasi$Player == "Mateo Kova?i?"] <- "Mateo Kovačić"
+nogometasi$Player[nogometasi$Player == "Micha? Karbownik"] <- "Michał Karbownik"
+nogometasi$Player[nogometasi$Player == "Nemanja Mati?"] <- "Nemanja Matić"
+nogometasi$Player[nogometasi$Player == "Nikola Vla\u009ai?"] <- "Nikola Vlašić"
+nogometasi$Player[nogometasi$Player == "Przemys?aw P?acheta"] <- "Przemysław Płacheta"
+nogometasi$Player[nogometasi$Player == "Tomá\u009a Sou?ek"] <- "Tomáš Souček"
+```
+
+```{r include=FALSE}
+#Konverzija odigranih minuta iz char u numeric:
+nogometasi$Min <- as.numeric(gsub(",", "", nogometasi$Min))
+```
+
+### **3. Pregled sezone**
+
+```{r include=FALSE}
+klubovi <- nogometasi$Team %>% unique()
+najbolji_strijelci <- slice_max(nogometasi, Gls, n=5) %>% select(Player, Team, Gls, Gls.1) %>% rename("Gls per 90 min" = "Gls.1")
+najbolji_asistenti <- slice_max(nogometasi, Ast, n=5) %>% select(Player, Team, Ast, Ast.1) %>% rename("Ast per 90 min" = "Ast.1")
+```
+
+Ekipe koje su se natjecale u Premier Ligi u sezoni 2021/2022
+
+```{r}
+klubovi
+```
+
+#### Najbolji strijelci
+
+```{r}
+najbolji_strijelci
+```
+
+#### Najbolji asistenti
+
+```{r}
+najbolji_asistenti
+```
+
+#### Pozicije igrača
+
+Vizualizacija razdiobe igrača po pozicijama:
+
+```{r}
+nogometasi %>% select(Pos) %>% summarise(uniPos = ifelse(Pos == "DF,FW", "FW,DF", ifelse(Pos == "MF,FW", "FW,MF", ifelse(Pos == "DF,MF", "MF,DF", Pos)))) %>% arrange(uniPos) -> popravak
+barplot(table(popravak), xlab = "Pozicije", ylab = "frekvencija")
+```
+
+Primijetimo veliki broj obrambenih igrača što i ima smisla kada
+pogledamo da ekipe najčešće igraju s 4 igrača u obrani. Neki igrači su
+igrali pozicije beka i napadačkog krila pa spadaju u skupinu "FW,DF"
+koja je na prvi pogled dosta neuobičajena.
+
+#### Godine igrača
+
+```{r}
+distrStarosti <- hist(nogometasi$Age,
+                      breaks = 20,
+                      main="Razdioba starosti igrača",
+                      xlab="Starost",
+                      ylab='Frekvencija'
+                      )
+```
+
+```{r}
+x <- nogometasi %>% filter(!is.na(X90s) & X90s >= 9.5)
+distrStarosti <- hist(x$Age,
+                      breaks = 20,
+                      main="Starost igrača sa 25%+ minutaze",
+                      xlab="Starost",
+                      ylab='Frekvencija'
+                      )
+```
+
+### **4. Postoji li razlika u broju odigranih minuta mladih igrača (do 25 godina) među premierligaškim ekipama?**
+
+Podijelimo igrače...
+
+```{r}
+mladi <- nogometasi %>% filter(Age <= 25)
+cat("Broj mladih igrača do 25 godina iznosi: ", nrow(mladi), "\n")
+stari <- nogometasi %>% filter(Age > 25)
+cat("Broj igrača iznad 25 godina iznosi: ", nrow(stari))
+```
+
+Vizualizirajmo podjelu igrača u samim klubovima:
+
+```{r}
+nogometasi_god <- nogometasi %>% summarise(mladi = ifelse(Age <= 25, 1, 0), Team) %>% group_by(Team) %>% summarise(mladi = sum(mladi, na.rm = T), stari = n() - mladi) %>% pivot_longer(cols = mladi:stari, names_to = "kategorija")
+
+ggplot(nogometasi_god, aes(x=Team, y=value, fill=kategorija)) +
+    geom_bar(stat="identity", position="dodge") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+Vidimo da klubovi pretežno nastoje priključivati mlađe igrače u ekipu uz
+iznimke timova Burnley i Newcastle United.
+
+Pogledajmo sada koliko te iste mlade igrače timovi zapravo i koriste...
+
+```{r}
+nogometasi_min <- nogometasi %>% filter(!is.na(Age)) %>% summarise(Team, kategorija = ifelse(Age <= 25, "mladi", "stari"), minutaza = X90s*90) %>% group_by(Team, kategorija) %>%  summarise(Team, kategorija, ukupno = sum(minutaza, na.rm = T)) %>% unique()
+
+ggplot(nogometasi_min, aes(x=Team, y=ukupno, fill=kategorija)) +
+    geom_bar(stat="identity", position="dodge") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) 
+```
+
+Kod analize u obzir ćemo uzeti mlade igrače koji su upisali barem 90
+minuta.
+
+```{r}
+mladi90 <- nogometasi %>% filter(Age <= 25 & Min >= 90)
+```
+
+Pogledajmo koliko su u prosjeku klubovi davali minuta svojim mladim
+igračima
+
+```{r}
+ggplot(mladi90, aes(x = Team, y = Min)) + 
+  geom_boxplot(outlier.color = "red") +
+  geom_abline(intercept = mean(mladi90$Min), col = "Red") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+Testirat ćemo homogenost varijance raspodijele minuta mladih igraca po
+klubovima:
+
+```{r}
+bartlett.test(mladi90$Min ~ mladi90$Team)
+```
+
+Sada je potrebno testirati normalnost distribucije odigranih minuta za
+igrače do 25 godina ukupno i po klubovima:
+
+```{r}
+qqnorm(mladi90$Min, pch = 1, frame = FALSE,main='Odigrane minute za igrače do 25 godina')
+qqline(mladi90$Min, col = "steelblue", lwd = 2)
+```
+
+```{r}
+require(nortest)
+
+lillie.test(mladi90$Min[mladi90$Team == "Arsenal"])
+lillie.test(mladi90$Min[mladi90$Team == "Aston Villa"])
+lillie.test(mladi90$Min[mladi90$Team == "Brentford"])
+lillie.test(mladi90$Min[mladi90$Team == "Brighton & Hove Albion"])
+lillie.test(mladi90$Min[mladi90$Team == "Burnley"])
+lillie.test(mladi90$Min[mladi90$Team == "Chelsea"])
+lillie.test(mladi90$Min[mladi90$Team == "Crystal Palace"])
+lillie.test(mladi90$Min[mladi90$Team == "Leeds United"])
+lillie.test(mladi90$Min[mladi90$Team == "Leicester City"])
+lillie.test(mladi90$Min[mladi90$Team == "Liverpool"])
+lillie.test(mladi90$Min[mladi90$Team == "Manchester City"])
+lillie.test(mladi90$Min[mladi90$Team == "Manchester United"])
+lillie.test(mladi90$Min[mladi90$Team == "Newcastle United"])
+lillie.test(mladi90$Min[mladi90$Team == "Norwich City"])
+lillie.test(mladi90$Min[mladi90$Team == "Southampton"])
+lillie.test(mladi90$Min[mladi90$Team == "Tottenham Hotspur"])
+lillie.test(mladi90$Min[mladi90$Team == "Watford"])
+lillie.test(mladi90$Min[mladi90$Team == "West Ham United"])
+lillie.test(mladi90$Min[mladi90$Team == "Wolverhampton Wanderers"])
+```
+
+Na razini znacajnosti od 5% jedino Liverpool pravi probleme kod
+normalnosti. Iako varijanca i sredina ne odudaraju, uzorak ima izražene
+stršeće vrijednosti (Trent i Jota).
+
+```{r}
+mladi90 %>% filter(Team == "Liverpool") %>% select(Player, Min)
+
+mladi90bezL <- mladi90 %>% filter(Team != "Liverpool")
+```
+
+Sada kada smo pretpostavili homogenost varijance, normalnost i
+nezavisnost provest ćemo ANOVA test:
+
+H0: Raspodjela minuta igračima do 25 godina se ne razlikuje po klubovima
+
+H1: Raspodijela minuta igračima do 25 godina razlikuje se u barem jednom
+klubu alpha = 0.05.
+
+```{r}
+anova(lm(Min ~ Team, data = mladi90bezL))
+```
+
+#### **Zaključci:**
+
+Ne odbacujemo nultu hipotezu da se raspodjela minuta razlikuje po
+klubovima.
+
+Liverpool nismo uvrstili u test jer nismo mogli pretpostaviti
+normalnost, ali ni za tu ekipu ne možemo reći da značajno odstupa od
+prosjeka.
+
+```{r}
+mean(mladi90$Min[mladi90$Team == "Liverpool"])
+mean(mladi90$Min)
+```
+
+### **5. Dobivaju li u prosjeku više žutih kartona napadači ili igrači veznog reda?**
+
+Uzmimo za početak prosječne vrijednosti dobijenih žutih kartona kao
+motivaciju za statističko ispitivanje.
+
+Moramo pripaziti na činjenicu da postoji podosta igrača s vrlo malo
+minuta odigrano, stoga ima smisla gledati igrače koji su u cijeloj
+sezoni sveukupno barem 50% minuta odigrali.
+
+```{r}
+veznjaci <- nogometasi %>% filter(Pos == "MF" | Pos == "MF,FW" | Pos == "MF,DF") %>% filter(!is.na(X90s) & X90s >= 18)
+napadaci <- nogometasi %>% filter(Pos == "FW" | Pos == "FW,MF" | Pos == "FW,DF") %>% filter(!is.na(X90s) & X90s >= 18)
+cat("Prosječan broj žutih kartona igrača veznog reda iznosi: ", mean(veznjaci$CrdY, na.rm = T), "\n")
+cat("Prosječan broj žutih kartona napadača iznosi: ", mean(napadaci$CrdY, na.rm = T))
+
+```
+
+```{r}
+boxplot(veznjaci$CrdY, napadaci$CrdY, 
+        names = c('broj žutih kartona veznih igrača','broj žutih kartona napadača'),
+        main='Box plot raspodjele žutih kartona među veznjacima i napadačima')
+```
+
+Vizualiziramo li podatke pomoću box plota dobijemo bolju sliku stvarne
+raspodjele žutih kartona u kojoj vidimo neke indikacije da bi mogla
+postojati razlika u broju žutih kartona. Ovakvo ispitivanje bismo mogli
+provesti klasičnim t-testom, no prvo se moramo uvjeriti da raspodjele
+kartona dolaze iz približno normalne razdiobe.
+
+Normalnost ćemo provjeriti histogramom i qq plotom.
+
+```{r}
+hist(veznjaci$CrdY, 
+     breaks=seq(min(veznjaci$CrdY, na.rm = T),max(veznjaci$CrdY, na.rm = T)+1,0.25),
+     main='Histogram količine žutih kartona igrača veznog reda',
+     xlab='broj žutih kartona')
+```
+
+```{r}
+qqnorm(veznjaci$CrdY, pch = 1, frame = FALSE,main='igrači veznog reda')
+qqline(veznjaci$CrdY, col = "steelblue", lwd = 2)
+```
+
+```{r}
+hist(napadaci$CrdY, 
+     breaks=seq(min(napadaci$CrdY, na.rm = T),max(napadaci$CrdY, na.rm = T)+1,0.25),
+     main='Histogram količine žutih kartona napadača',
+     xlab='broj žutih kartona')
+```
+
+```{r}
+qqnorm(napadaci$CrdY, pch = 1, frame = FALSE,main='napadači')
+qqline(napadaci$CrdY, col = "steelblue", lwd = 2)
+```
+
+Budući da znamo da je t-test poprilično robustan, dajemo si za pravo
+koristiti ga iako gore prikazane razdiobe nisu distribuirane normalnom
+razdiobom, no nisu ni predaleko od iste.
+
+Provjeravamo jesu li varijance uzoraka značajno različite:
+
+```{r}
+cat("Varijanca broja žutih kartona kod veznjaka iznosi: ", var(veznjaci$CrdY), "\n")
+
+cat("Varijanca broja žutih kartona kod napadača iznosi: ", var(napadaci$CrdY))
+```
+
+ispitajmo...
+
+```{r}
+var.test(veznjaci$CrdY, napadaci$CrdY)
+```
+
+Ne odbacujemo H0 koja kaže da su varijance jednake. Dakle koristit ćemo
+**t-test za dva uzorka s pretpostavkom jednakih varijanci**.
+
+H0: broj žutih kartona između veznjaka i napadača je jednak.
+
+H1: broj žutih kartona kod veznjaka veći je od onog kod napadača.
+
+Odabir H1 motiviran je saznanjem da očekujemo da veznjaci imaju više
+žutih kartona.
+
+```{r}
+t.test(veznjaci$CrdY, napadaci$CrdY, alt = "greater", var.equal = TRUE)
+```
+
+Budući da je p-value značajno malen, možemo odbaciti H0 u korist H1. Čak
+i ako bi koristili dvostrani test, svejedno bi odbacili našu hipotezu H0
+u koristi H1.
+
+#### **Zaključci:**
+
+Na razini pouzdanosti od 95% odbacujemo H0 u korist H1, odnosno
+zaključujemo da je broj žutih kartona kod veznjaka veći od onog kod
+napadača.
+
+#### **6. Možete li na temelju zadanih parametara odrediti uspješnost pojedinog igrača?**
+
+Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
+morali baviti i secirati što čini dobrog igrača ovisno o pozicijama.
+
+Kao mjere uspješnosti igrača na raspolaganju imamo broj golova i broj
+asistencija. Naravno, nije objektivno uspoređivati obrambene, vezne i
+napadače prema broju golova tako da za neke pozicije sljedeća analiza
+nije najpogodnija.
+
+```{r}
+nog <- nogometasi %>% filter(Pos != "GK") %>% filter(X90s >= 19)
+dobri <- nog %>% filter(Ast > 6 | Gls > 12)
+losi <- nog %>% filter(Ast <= 6 & Gls <= 12)
+ggplot(dobri, aes(x = Ast, y = Gls)) + 
+  geom_jitter(width = 0.4, height = 0.4, alpha = 0.4, color="blue") + 
+  geom_text(aes(label = Player), check_overlap = T, size = 2.5) + 
+  geom_jitter(data = losi, aes(x = Ast, y = Gls), color="red", width = 0.3, height = 0.3, alpha = 0.4)
+```
+
+```{r}
+dobrixG <- nog %>% filter(xG > 9.5 | xA > 6)
+losixG <- nog %>% filter(xG <= 9.5 & xA <= 6)
+ggplot(dobrixG, aes(x = xA, y = xG)) + geom_jitter(color="blue",width = 0.3, height = 0.3, alpha = 0.4) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losixG,aes(x = xA, y = xG), color="red", width = 0.3, height = 0.3, alpha = 0.4 )
+```
+
+\*\*napomena: u gornja dva grafa dodan je *jitter* efekt kako bi se
+stekao bolji dojam količine točaka jer se koriste diskretni podaci\*\*
+
+**Određivanje uspješnosti po broju golova preko mjere očekivanih
+golova.**
+
+Osobi koja ne prati nogomet pojam očekivanih golova (xG) je možda
+nepoznat pa ćemo napomenuti da se radi o mjeri koja pokazuje procjenu
+vjerojatnosti u kojima neka prilika završi zgoditkom.
+
+Gls/xG
+
+```{r}
+ggplot(nog, aes(x = xG, y = Gls)) + geom_point(alpha = 0.4) + stat_smooth(method = lm, formula = y~x, se = F)
+```
+
+Prema grafu se da naslutiti da postoji jasna linearna veza između golova
+i očekivanih golova što daje motivaciju za daljne istraživanje.
+
+```{r}
+fit.gls = lm(Gls~xG,data=nog)
+```
+
+Potrebno je provjeriti jesu li narušene osnovne pretpostavke o
+rezidualima prije nego nastavimo dalje. Pretpostavke reziduala su
+normalnost i homogenost varijance.
+
+**Normalnost**
+
+Normalnost možemo provjeriti grafički pomoću histograma.
+
+```{r}
+hist(fit.gls$residuals,
+     main = "Histogram reziduala",
+     xlab = "vrijednost reziduala",
+     ylab = "frekvencija")
+```
+
+Statistički ju možemo provjeriti pomoću Kolmogorov-Smirnovljevog testa.
+
+```{r}
+require(nortest)
+lillie.test(fit.gls$residuals)
+```
+
+Budući da reziduali ne pokazuju preveliko odstupanje od normalnosti (u
+smislu zakrivljenosti ili drugih razlika u distribuciji) te je poznato
+da je t-test robustan na (ne)normalnost - u analizi podataka se u
+ovakvim slučajevima i dalje mogu donositi statistički zaključci iz
+regresijskih modela.
+
+Homogenost varijance provjerit ćemo grafički prikazom reziduala. Bitno
+nam je da se reziduali ne šire povećanjem y.
+
+```{r}
+plot(fit.gls$residuals)
+```
+
+Pogledajmo rezultat analize...
+
+```{r}
+summary(fit.gls)
+```
+
+Kao mjeru valjanosti linearne veze razmatramo varijablu R^2^. Ona iznosi
+0.854 što je dovoljno dobro za reći da mjerom xG relativno dobro možemo
+odrediti uspješnost igrača.
+
+```{r include=FALSE}
+cor.test(nog$xG,nog$Gls)
+```
+
+**Određivanje uspješnosti po broju golova i asistencija bez kaznenih
+udaraca u po 90 min preko mjere očekivanih golova i asistencija bez
+kaznenih udaraca po 90 min.**
+
+G+A/npxG+xA
+
+```{r}
+ggplot(nog, aes(x = npxG.xA.1, y = G.A.PK)) + geom_point(alpha=0.5) + stat_smooth(method = lm, formula = y~x, se = F)
+```
+
+Možemo opravdano naslutiti da postoji jaka linearna veza između ovih
+mjera.
+
+```{r}
+fit.ga = lm(G.A.PK~npxG.xA.1,data=nog)
+```
+
+Potrebno je provjeriti jesu li narušene osnovne pretpostavke o
+rezidualima prije nego nastavimo dalje. Pretpostavke reziduala su
+normalnost i homogenost varijance.
+
+**Normalnost**
+
+Normalnost možemo provjeriti grafički pomoću histograma.
+
+```{r}
+hist(fit.ga$residuals,
+     main = "Histogram reziduala",
+     xlab = "vrijednost reziduala",
+     ylab = "frekvencija")
+```
+
+Statistički ju možemo provjeriti pomoću Kolmogorov-Smirnovljevog testa.
+
+```{r}
+require(nortest)
+lillie.test(fit.ga$residuals)
+```
+
+Budući da reziduali ne pokazuju preveliko odstupanje od normalnosti (u
+smislu zakrivljenosti ili drugih razlika u distribuciji) te je poznato
+da je t-test robustan na (ne)normalnost - u analizi podataka se u
+ovakvim slučajevima i dalje mogu donositi statistički zaključci iz
+regresijskih modela.
+
+**Homogenost**
+
+Homogenost varijance provjerit ćemo grafički prikazom reziduala. Bitno
+nam je da se reziduali ne šire povećanjem y.
+
+```{r}
+plot(fit.ga$residuals)
+```
+
+Pogledajmo rezultat analize...
+
+```{r}
+summary(fit.ga)
+```
+
+Kao mjeru valjanosti linearne veze razmatramo varijablu R^2^. Ona iznosi
+0.84 što opravdava naše izvorne pretpostavke.
+
+### **7. Doprinose li sveukupnom uspjehu svoga tima više "domaći" igrači (tj. igrači engleske nacionalnosti) ili strani igrači?**
+
+Svi koji prate nogomet malo detaljnije znaju čiji igrači se cijene.
+Brazilci su najbolji dribleri, Španjolci najbolji u tiki-taki, Hrvati
+najbolji u penalima, ali u Engleskoj su najbolji Englezi. Javnost to
+zove *"English tax"* i time se cilja na činjenicu kako engleski klubovi
+skuplje plaćaju i prodaju domaće igrače u odnosu na strane. Je li to
+opravdano, pokazat će nam ANOVA. Koristit ćemo ju jer ćemo imati dvije
+skupine (strani i domaći igrači) gdje ćemo pretpostaviti jednakost te
+ćemo napokon saznati doprinose li oni sveukupnom uspjehu tima ili je to
+još jedna preuveličana engleska nogometna bajka. ...
+
+Prvi korak koji moramo napraviti je razdvojiti igrače po nacionalnosti,
+tj. odvojiti domaće igrače od stranih.
+
+```{r}
+nogometasi$Foreigners <- ifelse(nogometasi$Nation=="ENG", "ENG", "Other")
+```
+
+Pošto kod procjene uspješnosti možemo samo koristiti golove i
+asistencije jer nam ostali podaci nisu dostupni, a želimo vidjeti
+uspješnost, u obzir ćemo uzeti igrače koji su imali barem pet golova ili
+asistencija u ligi i koji su odigrali barem 4 utakmice.
+
+```{r}
+korisni <- nogometasi %>% filter(Gls+Ast>5 & X90s > 4)
+```
+
+Prvo želimo prikazati odnos količine stranih i domaćih igrača po
+klubovima
+
+```{r}
+nogometasi_nat <- korisni %>% summarise(English = ifelse(Nation == "ENG", 1, 0), Team) %>% group_by(Team) %>% summarise(English = sum(English, na.rm = T), Others = n() - English) %>% pivot_longer(cols = English:Others, names_to = "Foreigners")
+
+ggplot(nogometasi_nat, aes(x=Team, y=value, fill=Foreigners)) +
+    geom_bar(stat="identity", position="dodge") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) 
+```
+
+Vidimo da većina klubova ima veći broj stranih igrača (uz već spomenute
+kriterije), što je i očekivano kada se u obzir uzme kako Engleska ima
+puno manji broj stanovnika od ostatka svijeta. Kada se maknu naši
+kriteriji, više nije tolika razlika, ali je još uvijek jasno vidljiva.
+
+Pogledajmo koliko u prosjeku domaći i strani igrači imaju doprinos u
+golovima i asistencijama po utakmici:
+
+```{r}
+ggplot(korisni, aes(x = Foreigners, y = G.A.PK)) + 
+  geom_boxplot(outlier.color = "red") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+Možemo vidjeti kako su vrijednosti slične. Sljedeći korak je testiranje
+homogenosti varijance raspodjele stranih i domaćih igrača u odnosu sa
+golovima i asistencijama:
+
+```{r}
+bartlett.test(korisni$G.A.PK ~ korisni$Foreigners)
+```
+
+Utvrdili smo da su rezultati homogeni. Sada je potrebno testirati
+normalnost distribucije golova i asistencija po nacionalnost (domaći
+\<-\> strani) :
+
+```{r}
+require(nortest)
+lillie.test(korisni$G.A.PK[korisni$Foreigners == "ENG"])
+lillie.test(korisni$G.A.PK[korisni$Foreigners == "Other"])
+```
+
+Sada kada smo pretpostavili homogenost varijance, normalnost i
+nezavisnost provest ćemo ANOVA test: **Nulta hipoteza:** Engleski
+nogometaši imaju jednak doprinos uspjehu svojeg tima kao i strani
+nogometaši. Za potrebe testa ćemo koristiti alpha = 0.05.
+
+```{r}
+anova(lm(G.A.PK ~ Foreigners, data = korisni))
+```
+
+#### **Zaključci:**
+
+Ne odbacujemo nultu hipotezu da su engleski nogometaši uspješniji od
+stranih. Dobivena p-vrijednost je velika i to nam govori kako je naša
+prvotna pretpostavka bila točna.
+
+### **8. Zaključak**
+
+Ukupni zaključak cijelog rada je podijeljen. Svidjela nam se tema, ali
+smo puno vremena proveli u razmatranju, razmišljanju i dogovoru oko
+pravih pristupa zadacima. Predstavljalo nam je problem što su podaci
+upravo takvi kakvi jesu, realni, jer u idealnom svijetu zadataka iz
+zbirke, naviknuti smo na prilagođene podatke, podatke koji ne odstupaju,
+prema kojima možemo pretpostaviti normalnost, homogenost... Ovdje to
+nije toliko jednostavno, podatke smo morali prilagođavati i filtrirati
+kako bi mogli zadovoljiti uvjete koje naši testovi zahtijevaju. Zbog
+toga su naši testovi, a i njihovi zaključci, ograničeni i treba ih uzeti
+sa zadrškom. Također, neke segmente smo morali ignorirati, kao što su
+golmani kada je u pitanju bila uspješnost igrača, jer nismo imali
+podatke prema kojima bi ih mogli uspoređivati.\
+Puno smo naučili iz ovog projekta i to će nam iskustvo sigurno u
+budućnosti pomoći ako se susretnemo sa sličnim problemima. Dali smo sve
+od sebe i probali iskoristiti svo znanje koje smo do sada dobili na ovom
+i prijašnjim kolegijima kako bismo uspješno došli do što boljih
+zaključaka.
