@@ -97,7 +97,7 @@ najbolji_strijelci <- slice_max(nogometasi, Gls, n=5) %>% select(Player, Team, G
 najbolji_asistenti <- slice_max(nogometasi, Ast, n=5) %>% select(Player, Team, Ast, Ast.1) %>% rename("Ast per 90 min" = "Ast.1")
 ```
 
-Ekipe koje su se natjecale u Premier Ligi u sezonu 2021/2022
+Ekipe koje su se natjecale u Premier Ligi u sezoni 2021/2022
 
 ```{r}
 klubovi
@@ -177,7 +177,7 @@ iznimke timova Burnley i Newcastle United.
 Pogledajmo sada koliko te iste mlade igrače timovi zapravo i koriste...
 
 ```{r}
-nogometasi_min <- nogometasi %>% filter(!is.na(Age)) %>% summarise(Team, kategorija = ifelse(Age <= 26, "mladi", "stari"), minutaza = X90s*90) %>% group_by(Team, kategorija) %>%  summarise(Team, kategorija, ukupno = sum(minutaza, na.rm = T)) %>% unique()
+nogometasi_min <- nogometasi %>% filter(!is.na(Age)) %>% summarise(Team, kategorija = ifelse(Age <= 25, "mladi", "stari"), minutaza = X90s*90) %>% group_by(Team, kategorija) %>%  summarise(Team, kategorija, ukupno = sum(minutaza, na.rm = T)) %>% unique()
 
 ggplot(nogometasi_min, aes(x=Team, y=ukupno, fill=kategorija)) +
     geom_bar(stat="identity", position="dodge") +
@@ -293,19 +293,17 @@ cat("Prosječan broj žutih kartona napadača iznosi: ", mean(napadaci$CrdY, na.
 
 ```
 
-Vizualiziramo li podatke pomoću box plota:
-
 ```{r}
 boxplot(veznjaci$CrdY, napadaci$CrdY, 
         names = c('broj žutih kartona veznih igrača','broj žutih kartona napadača'),
         main='Box plot raspodjele žutih kartona među veznjacima i napadačima')
 ```
 
-dobijemo bolju sliku stvarne raspodjele žutih kartona u kojoj vidimo
-neke indikacije da bi mogla postojati razlika u broju žutih kartona.
-Ovakvo ispitivanje bismo mogli provesti klasičnim t-testom, no prvo se
-moramo uvjeriti da raspodjele kartona dolaze iz približno normalne
-razdiobe.
+Vizualiziramo li podatke pomoću box plota dobijemo bolju sliku stvarne
+raspodjele žutih kartona u kojoj vidimo neke indikacije da bi mogla
+postojati razlika u broju žutih kartona. Ovakvo ispitivanje bismo mogli
+provesti klasičnim t-testom, no prvo se moramo uvjeriti da raspodjele
+kartona dolaze iz približno normalne razdiobe.
 
 Normalnost ćemo provjeriti histogramom i qq plotom.
 
@@ -363,14 +361,15 @@ Odabir H1 motiviran je saznanjem da očekujemo da veznjaci imaju više
 
 ```{r}
 t.test(veznjaci$CrdY, napadaci$CrdY, alt = "greater", var.equal = TRUE)
-#izveo sam i za two.sided, outcome je isti
 ```
 
-Budući da je p-value značajno malen, možemo odbaciti H0 u korist H1.
+Budući da je p-value značajno malen, možemo odbaciti H0 u korist H1. Čak
+i ako bi koristili dvostrani test, svejedno bi odbacili našu hipotezu H0
+u koristi H1.
 
 #### **Zaključci:**
 
-Na razini pouzdanosti od 95% odbacujemo H0 u korist H1 odnosno
+Na razini pouzdanosti od 95% odbacujemo H0 u korist H1, odnosno
 zaključujemo da je broj žutih kartona kod veznjaka veći od onog kod
 napadača.
 
@@ -379,8 +378,10 @@ napadača.
 Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
 morali baviti i secirati što čini dobrog igrača ovisno o pozicijama.
 
+    \newpage
+
 Kao mjere uspješnosti igrača na raspolaganju imamo broj golova i broj
-asistencija. Naravno nije objektivno usporedjivat obrambene vezne i
+asistencija. Naravno, nije objektivno uspoređivati obrambene, vezne i
 napadače prema broju golova tako da za neke pozicije sljedeća analiza
 nije najpogodnija.
 
@@ -388,13 +389,16 @@ nije najpogodnija.
 nog <- nogometasi %>% filter(Pos != "GK") %>% filter(X90s >= 19)
 dobri <- nog %>% filter(Ast > 6 | Gls > 12)
 losi <- nog %>% filter(Ast <= 6 & Gls <= 12)
-ggplot(dobri, aes(x = Ast, y = Gls)) + geom_jitter(width = 0.4, height = 0.4, alpha = 0.4) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losi, aes(x = Ast, y = Gls), width = 0.3, height = 0.3, alpha = 0.4)
+ggplot(dobri, aes(x = Ast, y = Gls)) + 
+  geom_jitter(width = 0.4, height = 0.4, alpha = 0.4, color="blue") + 
+  geom_text(aes(label = Player), check_overlap = T, size = 2.5) + 
+  geom_jitter(data = losi, aes(x = Ast, y = Gls), color="red", width = 0.3, height = 0.3, alpha = 0.4)
 ```
 
 ```{r}
 dobrixG <- nog %>% filter(xG > 9.5 | xA > 6)
 losixG <- nog %>% filter(xG <= 9.5 & xA <= 6)
-ggplot(dobrixG, aes(x = xA, y = xG)) + geom_jitter(width = 0.3, height = 0.3, alpha = 0.4) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losixG,aes(x = xA, y = xG), width = 0.3, height = 0.3, alpha = 0.4 )
+ggplot(dobrixG, aes(x = xA, y = xG)) + geom_jitter(color="blue",width = 0.3, height = 0.3, alpha = 0.4) + geom_text(aes(label = Player), check_overlap = T, size = 2.5) + geom_jitter(data = losixG,aes(x = xA, y = xG), color="red", width = 0.3, height = 0.3, alpha = 0.4 )
 ```
 
 \*\*napomena: u gornja dva grafa dodan je *jitter* efekt kako bi se
@@ -476,7 +480,7 @@ kaznenih udaraca po 90 min.**
 G+A/npxG+xA
 
 ```{r}
-ggplot(nog, aes(x = npxG.xA.1, y = G.A.PK)) + geom_point() + stat_smooth(method = lm, formula = y~x, se = F)
+ggplot(nog, aes(x = npxG.xA.1, y = G.A.PK)) + geom_point(alpha=0.5) + stat_smooth(method = lm, formula = y~x, se = F)
 ```
 
 Možemo opravdano naslutiti da postoji jaka linearna veza između ovih
@@ -557,7 +561,6 @@ uspješnost, u obzir ćemo uzeti igrače koji su imali barem pet golova ili
 asistencija u ligi i koji su odigrali barem 4 utakmice.
 
 ```{r}
-# glimpse(nogometasi)
 korisni <- nogometasi %>% filter(Gls+Ast>5 & X90s > 4)
 ```
 
@@ -587,7 +590,7 @@ ggplot(korisni, aes(x = Foreigners, y = G.A.PK)) +
 ```
 
 Možemo vidjeti kako su vrijednosti slične. Sljedeći korak je testiranje
-homogenosti varijance raspodijele stranih i domaćih igrača u odnosu sa
+homogenosti varijance raspodjele stranih i domaćih igrača u odnosu sa
 golovima i asistencijama:
 
 ```{r}
@@ -616,5 +619,5 @@ anova(lm(G.A.PK ~ Foreigners, data = korisni))
 #### **Zaključci:**
 
 Ne odbacujemo nultu hipotezu da su engleski nogometaši uspješniji od
-stranih. Dobivena p-vrijednost je vrlo velika i to nam govori kako je
-naša prvotna pretpostavka bila točna.
+stranih. Dobivena p-vrijednost je velika i to nam govori kako je naša
+prvotna pretpostavka bila točna.
