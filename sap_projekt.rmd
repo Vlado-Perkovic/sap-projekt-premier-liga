@@ -378,8 +378,6 @@ napadača.
 Što je zapravo uspješnost igrača? To je pitanje kojim smo se prvotno
 morali baviti i secirati što čini dobrog igrača ovisno o pozicijama.
 
-    \newpage
-
 Kao mjere uspješnosti igrača na raspolaganju imamo broj golova i broj
 asistencija. Naravno, nije objektivno uspoređivati obrambene, vezne i
 napadače prema broju golova tako da za neke pozicije sljedeća analiza
